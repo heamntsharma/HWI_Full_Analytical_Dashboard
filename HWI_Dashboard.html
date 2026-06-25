@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Heat Wave Index — Analytical Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1627;
+    --bg3: #141e33;
+    --card: #111827;
+    --border: #1e2d4a;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #f97316;
+    --accent2: #fb923c;
+    --severe: #ef4444;
+    --high: #f97316;
+    --moderate: #eab308;
+    --low: #22c55e;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --teal: #14b8a6;
+    --glow: rgba(249,115,22,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0f1627 40%, #1a0a0a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+
+  .logo-flame {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--accent), #fbbf24);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    box-shadow: 0 0 20px var(--glow);
+  }
+
+  .logo-text h1 {
+    font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #f97316, #fbbf24);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .logo-text p { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .header-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  .badge {
+    font-size: 0.65rem; font-weight: 600; padding: 0.3rem 0.6rem;
+    border-radius: 20px; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+
+  .badge-orange { background: rgba(249,115,22,0.15); color: var(--accent); border: 1px solid rgba(249,115,22,0.3); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .badge-red { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+  /* TABS */
+  .tabs-wrap {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs-wrap::-webkit-scrollbar { display: none; }
+
+  .tabs {
+    max-width: 1400px; margin: 0 auto;
+    display: flex; gap: 0;
+  }
+
+  .tab {
+    padding: 1rem 1.25rem;
+    font-size: 0.8rem; font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border: none; background: none;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+
+  .tab:hover { color: var(--text); }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* MAIN */
+  .main {
+    max-width: 1400px; margin: 0 auto;
+    padding: 1.5rem 1.5rem;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* KPIS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem; margin-bottom: 1.5rem;
+  }
+
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+
+  .kpi.orange::before { background: linear-gradient(90deg, var(--accent), #fbbf24); }
+  .kpi.red::before { background: linear-gradient(90deg, var(--severe), #f87171); }
+  .kpi.blue::before { background: linear-gradient(90deg, var(--blue), var(--purple)); }
+  .kpi.teal::before { background: linear-gradient(90deg, var(--teal), #22d3ee); }
+  .kpi.green::before { background: linear-gradient(90deg, var(--low), #86efac); }
+
+  .kpi-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.6rem; }
+  .kpi-value { font-size: 2rem; font-weight: 700; line-height: 1; font-family: 'JetBrains Mono', monospace; }
+  .kpi-sub { font-size: 0.7rem; color: var(--muted); margin-top: 0.4rem; }
+
+  .kpi.orange .kpi-value { color: var(--accent); }
+  .kpi.red .kpi-value { color: var(--severe); }
+  .kpi.blue .kpi-value { color: #60a5fa; }
+  .kpi.teal .kpi-value { color: var(--teal); }
+  .kpi.green .kpi-value { color: var(--low); }
+
+  /* GRIDS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .col-span-2 { grid-column: span 2; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .card-title {
+    font-size: 0.75rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  .card-title .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+  }
+
+  /* CHART CONTAINER */
+  .chart-wrap { position: relative; width: 100%; }
+  .chart-wrap canvas { width: 100% !important; }
+
+  /* STATE TABLE */
+  .state-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+
+  .state-table th {
+    text-align: left; padding: 0.6rem 0.75rem;
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+
+  .state-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(30,45,74,0.5);
+  }
+
+  .state-table tr:last-child td { border-bottom: none; }
+  .state-table tr:hover td { background: rgba(249,115,22,0.04); }
+
+  .state-name { font-weight: 600; }
+
+  .risk-pill {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.2rem 0.55rem; border-radius: 20px;
+    font-size: 0.65rem; font-weight: 600;
+  }
+
+  .risk-severe { background: rgba(239,68,68,0.15); color: var(--severe); border: 1px solid rgba(239,68,68,0.3); }
+  .risk-high { background: rgba(249,115,22,0.15); color: var(--high); border: 1px solid rgba(249,115,22,0.3); }
+  .risk-moderate { background: rgba(234,179,8,0.15); color: var(--moderate); border: 1px solid rgba(234,179,8,0.3); }
+  .risk-low { background: rgba(34,197,94,0.15); color: var(--low); border: 1px solid rgba(34,197,94,0.3); }
+
+  /* SHAP BARS */
+  .shap-item { margin-bottom: 0.75rem; }
+  .shap-header { display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-size: 0.75rem; }
+  .shap-feature { font-weight: 500; }
+  .shap-pct { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 0.7rem; }
+
+  .shap-bar-bg {
+    height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+  }
+
+  .shap-bar-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), #fbbf24);
+    transition: width 1s ease;
+  }
+
+  .shap-category {
+    font-size: 0.6rem; color: var(--muted); margin-top: 0.2rem;
+  }
+
+  /* SCENARIO TABLE */
+  .scenario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+  .scenario-card {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 1rem;
+  }
+
+  .scenario-card.worst { border-color: rgba(239,68,68,0.4); }
+  .scenario-card.mid { border-color: rgba(234,179,8,0.4); }
+  .scenario-card.best { border-color: rgba(34,197,94,0.4); }
+
+  .ssp-label {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 0.5rem; font-weight: 700;
+  }
+
+  .scenario-card.worst .ssp-label { color: var(--severe); }
+  .scenario-card.mid .ssp-label { color: var(--moderate); }
+  .scenario-card.best .ssp-label { color: var(--low); }
+
+  .ssp-name { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem; }
+
+  .ssp-row { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(30,45,74,0.5); font-size: 0.75rem; }
+  .ssp-row:last-child { border-bottom: none; }
+  .ssp-year { color: var(--muted); }
+  .ssp-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  /* MODEL CARDS */
+  .model-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+  .model-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem;
+  }
+
+  .model-target { font-size: 0.65rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+  .model-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.6rem; }
+
+  .model-stars { color: #fbbf24; font-size: 0.85rem; margin-bottom: 0.6rem; }
+
+  .model-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+
+  .metric-item { text-align: center; }
+  .metric-label { font-size: 0.6rem; text-transform: uppercase; color: var(--muted); }
+  .metric-value { font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text); }
+
+  /* DISTRICT TABLE */
+  .district-controls {
+    display: flex; gap: 0.75rem; margin-bottom: 1rem;
+    flex-wrap: wrap; align-items: center;
+  }
+
+  .filter-select {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 0.45rem 0.75rem;
+    border-radius: 8px; font-size: 0.8rem;
+    cursor: pointer; outline: none;
+    font-family: inherit;
+  }
+
+  .filter-select:focus { border-color: var(--accent); }
+
+  .search-input {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 0.45rem 0.75rem;
+    border-radius: 8px; font-size: 0.8rem;
+    outline: none; font-family: inherit;
+    min-width: 200px; flex: 1;
+  }
+
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  .district-count {
+    font-size: 0.75rem; color: var(--muted);
+    margin-left: auto;
+  }
+
+  .district-table-wrap {
+    max-height: 460px; overflow-y: auto;
+    border-radius: 8px; border: 1px solid var(--border);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .district-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+
+  .district-table th {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--bg2); padding: 0.65rem 0.75rem;
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+
+  .district-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid rgba(30,45,74,0.4);
+  }
+
+  .district-table tr:hover td { background: rgba(249,115,22,0.04); }
+
+  .hwi-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  .priority-immediate { color: var(--severe); font-weight: 700; font-size: 0.7rem; }
+  .priority-urgent { color: var(--high); font-weight: 700; font-size: 0.7rem; }
+  .priority-planned { color: var(--moderate); font-weight: 700; font-size: 0.7rem; }
+  .priority-monitor { color: var(--low); font-weight: 700; font-size: 0.7rem; }
+
+  /* ALERT BANNER */
+  .alert-banner {
+    background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(249,115,22,0.1));
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 10px; padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex; align-items: flex-start; gap: 1rem;
+  }
+
+  .alert-icon { font-size: 1.5rem; flex-shrink: 0; }
+  .alert-title { font-weight: 700; color: #f87171; font-size: 0.9rem; margin-bottom: 0.3rem; }
+  .alert-text { font-size: 0.78rem; color: #fca5a5; line-height: 1.5; }
+
+  /* LEGEND */
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* HISTORICAL HIGHLIGHT */
+  .highlight-row {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem; margin-bottom: 1rem;
+  }
+
+  .highlight-cell {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.75rem;
+    text-align: center;
+  }
+
+  .highlight-state { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.3rem; }
+  .highlight-max { font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--severe); }
+  .highlight-year { font-size: 0.65rem; color: var(--muted); }
+
+  /* GRANGER */
+  .granger-item {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 0.5rem; align-items: start;
+  }
+
+  .granger-var { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem; }
+  .granger-interp { font-size: 0.75rem; color: var(--muted); line-height: 1.4; }
+  .granger-policy { font-size: 0.7rem; color: #60a5fa; margin-top: 0.3rem; }
+
+  .granger-pval {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem; font-weight: 600; color: var(--muted);
+    text-align: right; white-space: nowrap;
+  }
+
+  .granger-lag { font-size: 0.65rem; color: var(--muted); }
+
+  /* RESPONSIVE */
+  @media (max-width: 1100px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .header { padding: 1rem; }
+    .tabs-wrap { padding: 0 1rem; }
+    .main { padding: 1rem; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .col-span-2 { grid-column: span 1; }
+    .scenario-grid { grid-template-columns: 1fr; }
+    .model-grid { grid-template-columns: 1fr; }
+    .highlight-row { grid-template-columns: repeat(2, 1fr); }
+    .tab { padding: 0.75rem 0.9rem; font-size: 0.75rem; }
+    .header-badges { display: none; }
+    .kpi-value { font-size: 1.5rem; }
+  }
+
+  @media (max-width: 480px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .highlight-row { grid-template-columns: 1fr 1fr; }
+    .logo-text p { display: none; }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .section.active { animation: fadeIn 0.3s ease; }
+
+  /* PULSE DOT */
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .pulse { animation: pulse 2s infinite; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-flame">🌡️</div>
+      <div class="logo-text">
+        <h1>India Heat Wave Index</h1>
+        <p>HWI Integrated Analytical Dashboard · SSP5-8.5 · 2007–2100</p>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-red">⚠ 35 Severe Districts</span>
+      <span class="badge badge-orange">SSP5-8.5 Scenario</span>
+      <span class="badge badge-blue">SVR R² = 0.636</span>
+    </div>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('executive')">📊 Executive Summary</button>
+    <button class="tab" onclick="showTab('historical')">📈 Historical Trends</button>
+    <button class="tab" onclick="showTab('future')">🔮 Future Scenarios</button>
+    <button class="tab" onclick="showTab('models')">🤖 Model Performance</button>
+    <button class="tab" onclick="showTab('features')">🔬 Feature Influence</button>
+    <button class="tab" onclick="showTab('districts')">🗺️ District Risk</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- EXECUTIVE DASHBOARD -->
+  <div id="executive" class="section active">
+    <div class="alert-banner">
+      <div class="alert-icon pulse">🚨</div>
+      <div>
+        <div class="alert-title">Crisis-Level Heat Alert — SSP5-8.5 Projection</div>
+        <div class="alert-text">Under the worst-case scenario, national average HWI rises from 1.935 (2030) to 2.304 (2100) — a +0.369 increase corresponding to +4°C warming. Punjab leads with 11 severe districts. Immediate Heat Action Plans required for 35 districts across 5 states.</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi orange">
+        <div class="kpi-label">Districts Analysed</div>
+        <div class="kpi-value">139</div>
+        <div class="kpi-sub">Delhi · Haryana · Punjab · Rajasthan · UP</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-label">Severe Risk Districts</div>
+        <div class="kpi-value">35</div>
+        <div class="kpi-sub">SSP5-8.5, 2050 projection</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Avg HWI 2050 (SSP5-8.5)</div>
+        <div class="kpi-value">2.107</div>
+        <div class="kpi-sub">+0.172 from 2030</div>
+      </div>
+      <div class="kpi teal">
+        <div class="kpi-label">Historical Peak HWI</div>
+        <div class="kpi-value">3.74</div>
+        <div class="kpi-sub">Haryana — 2024</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-label">Best Model R² (HWI)</div>
+        <div class="kpi-value">0.636</div>
+        <div class="kpi-sub">SVR — Excellent fit</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>State-wise Risk Distribution (SSP5-8.5, 2050)</div>
+        <div class="chart-wrap" style="height: 260px">
+          <canvas id="stateRiskChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Top 5 HWI Drivers (SHAP Importance)</div>
+        <div id="shapBars">
+          <div class="shap-item">
+            <div class="shap-header"><span class="shap-feature">Max Temperature (°C)</span><span class="shap-pct">16.9%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" style="width: 100%"></div></div>
+            <div class="shap-category">Temperature · Pearson r = 0.466 (Strong)</div>
+          </div>
+          <div class="shap-item">
+            <div class="shap-header"><span class="shap-feature">Heat Index</span><span class="shap-pct">10.1%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" style="width: 60%"></div></div>
+            <div class="shap-category">Heat Stress · Pearson r = 0.534 (Strong)</div>
+          </div>
+          <div class="shap-item">
+            <div class="shap-header"><span class="shap-feature">LST Lag-1 (Land Surface Temp)</span><span class="shap-pct">9.6%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" style="width: 57%"></div></div>
+            <div class="shap-category">Land Surface Temp · Pearson r = -0.322 (Moderate)</div>
+          </div>
+          <div class="shap-item">
+            <div class="shap-header"><span class="shap-feature">RH% Rolling 3-day Std Dev</span><span class="shap-pct">7.2%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" style="width: 43%"></div></div>
+            <div class="shap-category">Humidity · Pearson r = 0.256 (Moderate)</div>
+          </div>
+          <div class="shap-item">
+            <div class="shap-header"><span class="shap-feature">Temperature Anomaly</span><span class="shap-pct">6.2%</span></div>
+            <div class="shap-bar-bg"><div class="shap-bar-fill" style="width: 37%"></div></div>
+            <div class="shap-category">Temperature · Pearson r = 0.313 (Moderate)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title"><span class="dot"></span>State Risk Summary Table</div>
+      <table class="state-table">
+        <thead>
+          <tr>
+            <th>State</th><th>Districts</th><th>Severe</th><th>High</th><th>Moderate</th><th>Low</th><th>Avg HWI (2050)</th><th>Risk Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="state-name">Punjab</td>
+            <td>17</td>
+            <td><span class="risk-pill risk-severe">11</span></td>
+            <td>1</td><td>5</td><td>0</td>
+            <td class="hwi-val" style="color:var(--severe)">2.350</td>
+            <td class="hwi-val" style="color:var(--severe)">3.35</td>
+          </tr>
+          <tr>
+            <td class="state-name">Uttar Pradesh</td>
+            <td>70</td>
+            <td><span class="risk-pill risk-severe">21</span></td>
+            <td>28</td><td>18</td><td>3</td>
+            <td class="hwi-val" style="color:var(--high)">2.202</td>
+            <td class="hwi-val" style="color:var(--high)">2.96</td>
+          </tr>
+          <tr>
+            <td class="state-name">Delhi</td>
+            <td>1</td>
+            <td><span class="risk-pill risk-low">0</span></td>
+            <td>1</td><td>0</td><td>0</td>
+            <td class="hwi-val" style="color:var(--high)">2.244</td>
+            <td class="hwi-val" style="color:var(--high)">3.00</td>
+          </tr>
+          <tr>
+            <td class="state-name">Haryana</td>
+            <td>19</td>
+            <td><span class="risk-pill risk-severe">3</span></td>
+            <td>4</td><td>5</td><td>7</td>
+            <td class="hwi-val" style="color:var(--moderate)">2.060</td>
+            <td class="hwi-val" style="color:var(--moderate)">2.16</td>
+          </tr>
+          <tr>
+            <td class="state-name">Rajasthan</td>
+            <td>32</td>
+            <td><span class="risk-pill risk-low">0</span></td>
+            <td>0</td><td>7</td><td>25</td>
+            <td class="hwi-val" style="color:var(--low)">1.794</td>
+            <td class="hwi-val" style="color:var(--low)">1.22</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HISTORICAL TRENDS -->
+  <div id="historical" class="section">
+    <div class="highlight-row">
+      <div class="highlight-cell">
+        <div class="highlight-state">Delhi Peak</div>
+        <div class="highlight-max">3.22</div>
+        <div class="highlight-year">Year 2024</div>
+      </div>
+      <div class="highlight-cell">
+        <div class="highlight-state">Haryana Peak</div>
+        <div class="highlight-max">3.74</div>
+        <div class="highlight-year">Year 2024</div>
+      </div>
+      <div class="highlight-cell">
+        <div class="highlight-state">Punjab Peak</div>
+        <div class="highlight-max">3.61</div>
+        <div class="highlight-year">Year 2024</div>
+      </div>
+      <div class="highlight-cell">
+        <div class="highlight-state">Rajasthan Peak</div>
+        <div class="highlight-max">2.81</div>
+        <div class="highlight-year">Year 2010</div>
+      </div>
+      <div class="highlight-cell">
+        <div class="highlight-state">UP Peak</div>
+        <div class="highlight-max">3.44</div>
+        <div class="highlight-year">Year 2024</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title"><span class="dot"></span>Annual HWI by State (2007–2025)</div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Delhi</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span>Haryana</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Punjab</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Rajasthan</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6"></span>Uttar Pradesh</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#fbbf24"></span>National Avg</div>
+      </div>
+      <div class="chart-wrap" style="height: 320px">
+        <canvas id="historicalChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>State Statistics Summary</div>
+      <table class="state-table">
+        <thead>
+          <tr><th>State</th><th>Min HWI</th><th>Max HWI</th><th>Avg HWI</th><th>Std Dev</th><th>Peak Year</th><th>Trend</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="state-name">Delhi</td>
+            <td class="hwi-val">1.310</td>
+            <td class="hwi-val" style="color:var(--severe)">3.220</td>
+            <td class="hwi-val">1.932</td>
+            <td class="hwi-val">0.470</td>
+            <td><strong>2024</strong></td>
+            <td style="color:var(--low)">▼ 0.417</td>
+          </tr>
+          <tr>
+            <td class="state-name">Haryana</td>
+            <td class="hwi-val">0.666</td>
+            <td class="hwi-val" style="color:var(--severe)">3.740</td>
+            <td class="hwi-val">1.955</td>
+            <td class="hwi-val">0.512</td>
+            <td><strong>2024</strong></td>
+            <td style="color:var(--low)">▼ 0.278</td>
+          </tr>
+          <tr>
+            <td class="state-name">Punjab</td>
+            <td class="hwi-val">0.928</td>
+            <td class="hwi-val" style="color:var(--severe)">3.612</td>
+            <td class="hwi-val">2.101</td>
+            <td class="hwi-val">0.511</td>
+            <td><strong>2024</strong></td>
+            <td style="color:var(--low)">▼ 0.044</td>
+          </tr>
+          <tr>
+            <td class="state-name">Rajasthan</td>
+            <td class="hwi-val">0.322</td>
+            <td class="hwi-val" style="color:var(--moderate)">2.814</td>
+            <td class="hwi-val">1.630</td>
+            <td class="hwi-val">0.457</td>
+            <td><strong>2010</strong></td>
+            <td style="color:var(--severe)">▲ 0.126</td>
+          </tr>
+          <tr>
+            <td class="state-name">Uttar Pradesh</td>
+            <td class="hwi-val">0.598</td>
+            <td class="hwi-val" style="color:var(--severe)">3.444</td>
+            <td class="hwi-val">1.883</td>
+            <td class="hwi-val">0.510</td>
+            <td><strong>2024</strong></td>
+            <td style="color:var(--low)">▼ 0.376</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FUTURE SCENARIOS -->
+  <div id="future" class="section">
+    <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr)">
+      <div class="kpi green">
+        <div class="kpi-label">SSP1-2.6 Total Rise</div>
+        <div class="kpi-value">+0.196</div>
+        <div class="kpi-sub">+1.0°C warming · Manageable</div>
+      </div>
+      <div class="kpi" style="border-color:rgba(234,179,8,0.3)">
+        <div class="kpi-label">SSP2-4.5 Total Rise</div>
+        <div class="kpi-value" style="color:var(--moderate)">+0.316</div>
+        <div class="kpi-sub">+2.0°C warming · Significant</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-label">SSP5-8.5 Total Rise</div>
+        <div class="kpi-value">+0.369</div>
+        <div class="kpi-sub">+4.0°C warming · Crisis</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>HWI Projections — 3 Scenarios (National Avg)</div>
+        <div class="chart-wrap" style="height: 280px">
+          <canvas id="scenarioChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>SSP5-8.5 State-wise Projections</div>
+        <div class="chart-wrap" style="height: 280px">
+          <canvas id="stateProjectionChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="scenario-grid" style="margin-top:1rem">
+      <div class="scenario-card best">
+        <div class="ssp-label">SSP1-2.6</div>
+        <div class="ssp-name">Low Emission Pathway</div>
+        <div class="ssp-row"><span class="ssp-year">2030</span><span class="ssp-val" style="color:var(--low)">1.890</span></div>
+        <div class="ssp-row"><span class="ssp-year">2050</span><span class="ssp-val" style="color:var(--low)">1.959</span></div>
+        <div class="ssp-row"><span class="ssp-year">2070</span><span class="ssp-val" style="color:var(--low)">2.027</span></div>
+        <div class="ssp-row"><span class="ssp-year">2100</span><span class="ssp-val" style="color:var(--low)">2.086</span></div>
+      </div>
+      <div class="scenario-card mid">
+        <div class="ssp-label">SSP2-4.5</div>
+        <div class="ssp-name">Intermediate Pathway</div>
+        <div class="ssp-row"><span class="ssp-year">2030</span><span class="ssp-val" style="color:var(--moderate)">1.914</span></div>
+        <div class="ssp-row"><span class="ssp-year">2050</span><span class="ssp-val" style="color:var(--moderate)">2.027</span></div>
+        <div class="ssp-row"><span class="ssp-year">2070</span><span class="ssp-val" style="color:var(--moderate)">2.141</span></div>
+        <div class="ssp-row"><span class="ssp-year">2100</span><span class="ssp-val" style="color:var(--moderate)">2.230</span></div>
+      </div>
+      <div class="scenario-card worst">
+        <div class="ssp-label">SSP5-8.5 ⚠ Crisis</div>
+        <div class="ssp-name">High Emission Pathway</div>
+        <div class="ssp-row"><span class="ssp-year">2030</span><span class="ssp-val" style="color:var(--high)">1.935</span></div>
+        <div class="ssp-row"><span class="ssp-year">2050</span><span class="ssp-val" style="color:var(--high)">2.107</span></div>
+        <div class="ssp-row"><span class="ssp-year">2070</span><span class="ssp-val" style="color:var(--severe)">2.266</span></div>
+        <div class="ssp-row"><span class="ssp-year">2100</span><span class="ssp-val" style="color:var(--severe)">2.304</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODEL PERFORMANCE -->
+  <div id="models" class="section">
+    <div class="model-grid" style="margin-bottom:1rem">
+      <div class="model-card" style="border-color:rgba(249,115,22,0.4)">
+        <div class="model-target">Heat Wave Index</div>
+        <div class="model-name">SVR (Support Vector Regression)</div>
+        <div class="model-stars">⭐⭐⭐ Excellent</div>
+        <div class="model-metrics">
+          <div class="metric-item"><div class="metric-label">R²</div><div class="metric-value" style="color:var(--low)">0.636</div></div>
+          <div class="metric-item"><div class="metric-label">RMSE</div><div class="metric-value">0.387</div></div>
+          <div class="metric-item"><div class="metric-label">MAE</div><div class="metric-value">0.284</div></div>
+        </div>
+      </div>
+      <div class="model-card" style="border-color:rgba(34,197,94,0.4)">
+        <div class="model-target">Exposure Area</div>
+        <div class="model-name">Prophet (Heatwave Exposure)</div>
+        <div class="model-stars">⭐⭐⭐ Excellent</div>
+        <div class="model-metrics">
+          <div class="metric-item"><div class="metric-label">R²</div><div class="metric-value" style="color:var(--low)">1.000</div></div>
+          <div class="metric-item"><div class="metric-label">RMSE</div><div class="metric-value">0.000</div></div>
+          <div class="metric-item"><div class="metric-label">MAE</div><div class="metric-value">0.000</div></div>
+        </div>
+      </div>
+      <div class="model-card" style="border-color:rgba(59,130,246,0.4)">
+        <div class="model-target">Heat Wave Density</div>
+        <div class="model-name">SVR (Support Vector Regression)</div>
+        <div class="model-stars">⭐⭐ Good</div>
+        <div class="model-metrics">
+          <div class="metric-item"><div class="metric-label">R²</div><div class="metric-value" style="color:var(--moderate)">0.492</div></div>
+          <div class="metric-item"><div class="metric-label">RMSE</div><div class="metric-value">0.030</div></div>
+          <div class="metric-item"><div class="metric-label">MAE</div><div class="metric-value">0.024</div></div>
+        </div>
+      </div>
+      <div class="model-card" style="border-color:rgba(139,92,246,0.4)">
+        <div class="model-target">HW Frequency</div>
+        <div class="model-name">SVR (Support Vector Regression)</div>
+        <div class="model-stars">⭐ Fair</div>
+        <div class="model-metrics">
+          <div class="metric-item"><div class="metric-label">R²</div><div class="metric-value" style="color:var(--high)">0.228</div></div>
+          <div class="metric-item"><div class="metric-label">RMSE</div><div class="metric-value">13.39</div></div>
+          <div class="metric-item"><div class="metric-label">MAE</div><div class="metric-value">11.32</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>R² Comparison Across Models & Targets</div>
+      <div class="chart-wrap" style="height: 320px">
+        <canvas id="modelChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURE INFLUENCE -->
+  <div id="features" class="section">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Top 10 Features by SHAP Importance</div>
+        <div class="chart-wrap" style="height: 340px">
+          <canvas id="shapChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Feature Category Breakdown</div>
+        <div class="chart-wrap" style="height: 340px">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title"><span class="dot"></span>Granger Causality Analysis</div>
+      <div class="granger-item">
+        <div>
+          <div class="granger-var">Max_Temp_C</div>
+          <div class="granger-interp">Temperature correlated but not Granger-causal in isolation. Use as primary target metric for heat emergency triggers.</div>
+          <div class="granger-policy">🔵 Policy: Primary metric for heat emergency protocols</div>
+        </div>
+        <div><div class="granger-pval">p = 0.259</div><div class="granger-lag">Lag: 1 yr</div></div>
+      </div>
+      <div class="granger-item">
+        <div>
+          <div class="granger-var">SoilMoisture</div>
+          <div class="granger-interp">Moisture levels don't directly precede HWI spikes in lag-1 tests.</div>
+          <div class="granger-policy">🔵 Policy: Monitor for compound risk signals</div>
+        </div>
+        <div><div class="granger-pval">p = 0.101</div><div class="granger-lag">Lag: 1 yr</div></div>
+      </div>
+      <div class="granger-item">
+        <div>
+          <div class="granger-var">SolarRadiation_Jm2</div>
+          <div class="granger-interp">Solar radiation precedes HWI with 2-yr lag — near threshold.</div>
+          <div class="granger-policy">🔵 Policy: Track solar trends for early-warning integration</div>
+        </div>
+        <div><div class="granger-pval">p = 0.250</div><div class="granger-lag">Lag: 2 yr</div></div>
+      </div>
+      <div class="granger-item">
+        <div>
+          <div class="granger-var">RH_percent</div>
+          <div class="granger-interp">Humidity not a leading indicator of HWI shifts.</div>
+          <div class="granger-policy">🔵 Policy: Combine with temperature for wet-bulb heat stress alerts</div>
+        </div>
+        <div><div class="granger-pval">p = 0.281</div><div class="granger-lag">Lag: 1 yr</div></div>
+      </div>
+      <div class="granger-item">
+        <div>
+          <div class="granger-var">Rainfall_mm</div>
+          <div class="granger-interp">Rainfall decline is a long-lag consequence, not a driver.</div>
+          <div class="granger-policy">🔵 Policy: Water resource planning for heat-drought co-occurrence</div>
+        </div>
+        <div><div class="granger-pval">p = 0.813</div><div class="granger-lag">Lag: 3 yr</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISTRICT RISK -->
+  <div id="districts" class="section">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>139 Districts — Full Risk Register (SSP5-8.5, 2050)</div>
+      <div class="district-controls">
+        <input class="search-input" id="districtSearch" type="text" placeholder="Search district or state..." oninput="filterDistricts()">
+        <select class="filter-select" id="riskFilter" onchange="filterDistricts()">
+          <option value="">All Risk Levels</option>
+          <option value="Severe">🔴 Severe</option>
+          <option value="High">🟠 High</option>
+          <option value="Moderate">🟡 Moderate</option>
+          <option value="Low">🟢 Low</option>
+        </select>
+        <select class="filter-select" id="stateFilter" onchange="filterDistricts()">
+          <option value="">All States</option>
+          <option>Punjab</option>
+          <option>Uttar Pradesh</option>
+          <option>Haryana</option>
+          <option>Delhi</option>
+          <option>Rajasthan</option>
+        </select>
+        <span class="district-count" id="districtCount">139 districts</span>
+      </div>
+      <div class="district-table-wrap">
+        <table class="district-table">
+          <thead>
+            <tr>
+              <th>#</th><th>State</th><th>District</th>
+              <th>HWI 2050</th><th>Risk</th><th>Priority</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="districtTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const historicalYears = [2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+const historicalData = {
+  Delhi:   [1.965,1.638,2.171,2.708,1.527,2.213,2.001,2.179,2.118,1.462,1.842,1.422,1.96,1.861,1.508,2.057,1.31,3.22,1.548],
+  Haryana: [1.898,1.508,2.206,2.484,1.534,2.186,2.106,2.240,1.933,1.695,2.069,1.729,2.179,1.961,1.152,2.253,1.218,3.166,1.62],
+  Punjab:  [2.06,1.642,2.382,2.44,1.582,2.347,2.441,2.44,1.618,2.074,2.337,2.180,2.371,1.798,1.425,2.347,1.209,3.207,2.015],
+  Rajasthan:[1.388,0.979,1.702,2.341,1.577,1.262,1.687,1.871,1.733,2.049,1.718,1.923,1.919,1.514,0.639,1.591,1.307,2.255,1.514],
+  UP:      [1.876,1.647,2.168,2.315,1.437,2.615,1.827,2.115,2.149,1.654,1.557,1.545,2.239,1.836,1.037,1.902,1.58,2.771,1.5],
+  National:[1.79,1.473,2.092,2.362,1.501,2.209,1.909,2.116,1.959,1.801,1.761,1.734,2.171,1.774,1.012,1.934,1.42,2.763,1.583]
+};
+
+const districts = [
+  [1,"Punjab","Amritsar",2.62,"Severe","🚨 IMMEDIATE"],
+  [2,"Punjab","Gurdaspur",2.583,"Severe","🚨 IMMEDIATE"],
+  [3,"Punjab","Patiala",2.569,"Severe","🚨 IMMEDIATE"],
+  [4,"Punjab","Ludhiana",2.541,"Severe","🚨 IMMEDIATE"],
+  [5,"Punjab","Hoshiarpur",2.528,"Severe","🚨 IMMEDIATE"],
+  [6,"Punjab","Nawan Shehar",2.508,"Severe","🚨 IMMEDIATE"],
+  [7,"Punjab","Kapurthala",2.507,"Severe","🚨 IMMEDIATE"],
+  [8,"Punjab","Fatehgarh Sahib",2.489,"Severe","🚨 IMMEDIATE"],
+  [9,"Uttar Pradesh","Sitapur",2.489,"Severe","🚨 IMMEDIATE"],
+  [10,"Uttar Pradesh","Maharajganj",2.481,"Severe","🚨 IMMEDIATE"],
+  [11,"Uttar Pradesh","Ambedkar Nagar",2.473,"Severe","🚨 IMMEDIATE"],
+  [12,"Haryana","Panchkula",2.473,"Severe","🚨 IMMEDIATE"],
+  [13,"Punjab","Jalandhar",2.470,"Severe","🚨 IMMEDIATE"],
+  [14,"Uttar Pradesh","Shravasti",2.431,"Severe","🚨 IMMEDIATE"],
+  [15,"Uttar Pradesh","Gonda",2.421,"Severe","🚨 IMMEDIATE"],
+  [16,"Uttar Pradesh","Etah",2.421,"Severe","🚨 IMMEDIATE"],
+  [17,"Uttar Pradesh","Siddharth Nagar",2.409,"Severe","🚨 IMMEDIATE"],
+  [18,"Uttar Pradesh","Basti",2.406,"Severe","🚨 IMMEDIATE"],
+  [19,"Uttar Pradesh","Balrampur",2.404,"Severe","🚨 IMMEDIATE"],
+  [20,"Uttar Pradesh","Bahraich",2.402,"Severe","🚨 IMMEDIATE"],
+  [21,"Uttar Pradesh","Farrukhabad",2.400,"Severe","🚨 IMMEDIATE"],
+  [22,"Uttar Pradesh","Bara Banki",2.397,"Severe","🚨 IMMEDIATE"],
+  [23,"Uttar Pradesh","Shahjahanpur",2.391,"Severe","🚨 IMMEDIATE"],
+  [24,"Punjab","Moga",2.387,"Severe","🚨 IMMEDIATE"],
+  [25,"Haryana","Ambala",2.384,"Severe","🚨 IMMEDIATE"],
+  [26,"Uttar Pradesh","Azamgarh",2.354,"Severe","🚨 IMMEDIATE"],
+  [27,"Uttar Pradesh","Sant Kabir Nagar",2.353,"Severe","🚨 IMMEDIATE"],
+  [28,"Punjab","Rupnagar",2.336,"Severe","🚨 IMMEDIATE"],
+  [29,"Uttar Pradesh","Lakhimpur Kheri",2.336,"Severe","🚨 IMMEDIATE"],
+  [30,"Uttar Pradesh","Kannauj",2.326,"Severe","🚨 IMMEDIATE"],
+  [31,"Uttar Pradesh","Faizabad",2.325,"Severe","🚨 IMMEDIATE"],
+  [32,"Uttar Pradesh","Varanasi",2.315,"Severe","🚨 IMMEDIATE"],
+  [33,"Uttar Pradesh","Gorakhpur",2.293,"Severe","🚨 IMMEDIATE"],
+  [34,"Haryana","Kurukshetra",2.292,"Severe","🚨 IMMEDIATE"],
+  [35,"Uttar Pradesh","Bulandshahr",2.291,"Severe","🚨 IMMEDIATE"],
+  [36,"Uttar Pradesh","Mainpuri",2.288,"High","⚠️ URGENT"],
+  [37,"Uttar Pradesh","Auraiya",2.287,"High","⚠️ URGENT"],
+  [38,"Uttar Pradesh","Aligarh",2.278,"High","⚠️ URGENT"],
+  [39,"Uttar Pradesh","Sultanpur",2.276,"High","⚠️ URGENT"],
+  [40,"Uttar Pradesh","Etawah",2.273,"High","⚠️ URGENT"],
+  [41,"Haryana","Karnal",2.268,"High","⚠️ URGENT"],
+  [42,"Uttar Pradesh","Ghazipur",2.267,"High","⚠️ URGENT"],
+  [43,"Uttar Pradesh","Unnao",2.264,"High","⚠️ URGENT"],
+  [44,"Uttar Pradesh","Ghaziabad",2.263,"High","⚠️ URGENT"],
+  [45,"Uttar Pradesh","Jaunpur",2.262,"High","⚠️ URGENT"],
+  [46,"Haryana","Kaithal",2.261,"High","⚠️ URGENT"],
+  [47,"Uttar Pradesh","Kushinagar",2.260,"High","⚠️ URGENT"],
+  [48,"Delhi","Delhi",2.244,"High","⚠️ URGENT"],
+  [49,"Punjab","Sangrur",2.243,"High","⚠️ URGENT"],
+  [50,"Uttar Pradesh","Chandauli",2.239,"High","⚠️ URGENT"],
+  [51,"Uttar Pradesh","Hardoi",2.230,"High","⚠️ URGENT"],
+  [52,"Uttar Pradesh","Gautam Buddha Nagar",2.227,"High","⚠️ URGENT"],
+  [53,"Uttar Pradesh","Mau",2.226,"High","⚠️ URGENT"],
+  [54,"Uttar Pradesh","Kanpur Dehat",2.224,"High","⚠️ URGENT"],
+  [55,"Uttar Pradesh","Sant Ravi Das Nagar",2.216,"High","⚠️ URGENT"],
+  [56,"Uttar Pradesh","Rae Bareli",2.214,"High","⚠️ URGENT"],
+  [57,"Uttar Pradesh","Deoria",2.202,"High","⚠️ URGENT"],
+  [58,"Haryana","Panipat",2.196,"High","⚠️ URGENT"],
+  [59,"Uttar Pradesh","Kaushambi",2.192,"High","⚠️ URGENT"],
+  [60,"Uttar Pradesh","Firozabad",2.184,"High","⚠️ URGENT"],
+  [61,"Uttar Pradesh","Lucknow",2.174,"High","⚠️ URGENT"],
+  [62,"Uttar Pradesh","Kanpur",2.165,"High","⚠️ URGENT"],
+  [63,"Uttar Pradesh","Pratapgarh",2.155,"High","⚠️ URGENT"],
+  [64,"Haryana","Faridabad",2.154,"High","⚠️ URGENT"],
+  [65,"Uttar Pradesh","Hathras",2.149,"High","⚠️ URGENT"],
+  [66,"Uttar Pradesh","Pilibhit",2.135,"High","⚠️ URGENT"],
+  [67,"Uttar Pradesh","Allahabad",2.125,"High","⚠️ URGENT"],
+  [68,"Uttar Pradesh","Baghpat",2.124,"High","⚠️ URGENT"],
+  [69,"Uttar Pradesh","Fatehpur",2.116,"High","⚠️ URGENT"],
+  [70,"Haryana","Sonepat",2.115,"Moderate","📋 PLANNED"],
+  [71,"Uttar Pradesh","Ballia",2.113,"Moderate","📋 PLANNED"],
+  [72,"Uttar Pradesh","Mahoba",2.088,"Moderate","📋 PLANNED"],
+  [73,"Punjab","Faridkot",2.072,"Moderate","📋 PLANNED"],
+  [74,"Punjab","Mansa",2.070,"Moderate","📋 PLANNED"],
+  [75,"Uttar Pradesh","Jalaun",2.066,"Moderate","📋 PLANNED"],
+  [76,"Punjab","Firozpur",2.060,"Moderate","📋 PLANNED"],
+  [77,"Rajasthan","Ganganagar",2.060,"Moderate","📋 PLANNED"],
+  [78,"Rajasthan","Bundi",2.060,"Moderate","📋 PLANNED"],
+  [79,"Uttar Pradesh","Muzaffarnagar",2.058,"Moderate","📋 PLANNED"],
+  [80,"Uttar Pradesh","Banda",2.055,"Moderate","📋 PLANNED"],
+  [81,"Rajasthan","Hanumangarh",2.046,"Moderate","📋 PLANNED"],
+  [82,"Uttar Pradesh","Jhansi",2.044,"Moderate","📋 PLANNED"],
+  [83,"Rajasthan","Tonk",2.042,"Moderate","📋 PLANNED"],
+  [84,"Uttar Pradesh","Jyotiba Phule Nagar",2.037,"Moderate","📋 PLANNED"],
+  [85,"Uttar Pradesh","Bareilly",2.037,"Moderate","📋 PLANNED"],
+  [86,"Uttar Pradesh","Mathura",2.025,"Moderate","📋 PLANNED"],
+  [87,"Rajasthan","Kota",2.023,"Moderate","📋 PLANNED"],
+  [88,"Uttar Pradesh","Bijnor",2.019,"Moderate","📋 PLANNED"],
+  [89,"Haryana","Jind",2.014,"Moderate","📋 PLANNED"],
+  [90,"Uttar Pradesh","Agra",2.004,"Moderate","📋 PLANNED"],
+  [91,"Punjab","Bathinda",1.996,"Moderate","📋 PLANNED"],
+  [92,"Uttar Pradesh","Moradabad",1.992,"Moderate","📋 PLANNED"],
+  [93,"Uttar Pradesh","Rampur",1.989,"Moderate","📋 PLANNED"],
+  [94,"Uttar Pradesh","Chitrakoot",1.984,"Moderate","📋 PLANNED"],
+  [95,"Haryana","Gurgaon",1.983,"Moderate","📋 PLANNED"],
+  [96,"Uttar Pradesh","Hamirpur",1.981,"Moderate","📋 PLANNED"],
+  [97,"Rajasthan","Jodhpur",1.980,"Moderate","📋 PLANNED"],
+  [98,"Haryana","Sirsa",1.976,"Moderate","📋 PLANNED"],
+  [99,"Uttar Pradesh","Meerut",1.971,"Moderate","📋 PLANNED"],
+  [100,"Uttar Pradesh","Sonbhadra",1.968,"Moderate","📋 PLANNED"],
+  [101,"Punjab","Muktsar",1.964,"Moderate","📋 PLANNED"],
+  [102,"Rajasthan","Churu",1.961,"Moderate","📋 PLANNED"],
+  [103,"Haryana","Fatehabad",1.960,"Moderate","📋 PLANNED"],
+  [104,"Uttar Pradesh","Mirzapur",1.953,"Moderate","📋 PLANNED"],
+  [105,"Haryana","Bhiwani",1.946,"Low","👁 MONITOR"],
+  [106,"Uttar Pradesh","Saharanpur",1.924,"Low","👁 MONITOR"],
+  [107,"Uttar Pradesh","Badaun",1.923,"Low","👁 MONITOR"],
+  [108,"Haryana","Rohtak",1.920,"Low","👁 MONITOR"],
+  [109,"Rajasthan","Jhunjhunun",1.919,"Low","👁 MONITOR"],
+  [110,"Haryana","Jhajjar",1.905,"Low","👁 MONITOR"],
+  [111,"Rajasthan","Barmer",1.905,"Low","👁 MONITOR"],
+  [112,"Haryana","Hisar",1.902,"Low","👁 MONITOR"],
+  [113,"Rajasthan","Jaisalmer",1.888,"Low","👁 MONITOR"],
+  [114,"Haryana","Yamuna Nagar",1.866,"Low","👁 MONITOR"],
+  [115,"Rajasthan","Dhaulpur",1.857,"Low","👁 MONITOR"],
+  [116,"Rajasthan","Karauli",1.831,"Low","👁 MONITOR"],
+  [117,"Haryana","Rewari",1.819,"Low","👁 MONITOR"],
+  [118,"Rajasthan","Chittaurgarh",1.819,"Low","👁 MONITOR"],
+  [119,"Rajasthan","Sawai Madhopur",1.818,"Low","👁 MONITOR"],
+  [120,"Rajasthan","Jalor",1.812,"Low","👁 MONITOR"],
+  [121,"Uttar Pradesh","Lalitpur",1.811,"Low","👁 MONITOR"],
+  [122,"Rajasthan","Bikaner",1.791,"Low","👁 MONITOR"],
+  [123,"Rajasthan","Nagaur",1.787,"Low","👁 MONITOR"],
+  [124,"Rajasthan","Alwar",1.785,"Low","👁 MONITOR"],
+  [125,"Rajasthan","Bhilwara",1.783,"Low","👁 MONITOR"],
+  [126,"Rajasthan","Ajmer",1.778,"Low","👁 MONITOR"],
+  [127,"Rajasthan","Bharatpur",1.765,"Low","👁 MONITOR"],
+  [128,"Rajasthan","Dausa",1.754,"Low","👁 MONITOR"],
+  [129,"Rajasthan","Sikar",1.742,"Low","👁 MONITOR"],
+  [130,"Rajasthan","Jaipur",1.739,"Low","👁 MONITOR"],
+  [131,"Haryana","Mahendragarh",1.713,"Low","👁 MONITOR"],
+  [132,"Rajasthan","Jhalawar",1.695,"Low","👁 MONITOR"],
+  [133,"Rajasthan","Baran",1.689,"Low","👁 MONITOR"],
+  [134,"Rajasthan","Udaipur",1.626,"Low","👁 MONITOR"],
+  [135,"Rajasthan","Pali",1.535,"Low","👁 MONITOR"],
+  [136,"Rajasthan","Rajsamand",1.523,"Low","👁 MONITOR"],
+  [137,"Rajasthan","Sirohi",1.507,"Low","👁 MONITOR"],
+  [138,"Rajasthan","Dungarpur",1.476,"Low","👁 MONITOR"],
+  [139,"Rajasthan","Banswara",1.411,"Low","👁 MONITOR"],
+];
+
+// ─── RENDER DISTRICTS TABLE ──────────────────────────────────────────────────
+function riskClass(r) {
+  if (r==="Severe") return "risk-severe";
+  if (r==="High") return "risk-high";
+  if (r==="Moderate") return "risk-moderate";
+  return "risk-low";
+}
+
+function priorityClass(p) {
+  if (p.includes("IMMEDIATE")) return "priority-immediate";
+  if (p.includes("URGENT")) return "priority-urgent";
+  if (p.includes("PLANNED")) return "priority-planned";
+  return "priority-monitor";
+}
+
+function actionText(risk) {
+  if (risk==="Severe") return "Deploy HAPs; cooling shelters";
+  if (risk==="High") return "Early warning; ASHA alerts";
+  if (risk==="Moderate") return "Surveillance; heat-proofing";
+  return "Monitor & contingency plans";
+}
+
+function renderDistricts(data) {
+  const tbody = document.getElementById("districtTbody");
+  tbody.innerHTML = data.map(d => `
+    <tr>
+      <td style="color:var(--muted)">${d[0]}</td>
+      <td>${d[1]}</td>
+      <td style="font-weight:600">${d[2]}</td>
+      <td class="hwi-val">${d[3].toFixed(3)}</td>
+      <td><span class="risk-pill ${riskClass(d[4])}">${d[4]}</span></td>
+      <td class="${priorityClass(d[5])}">${d[5]}</td>
+      <td style="font-size:0.7rem;color:var(--muted)">${actionText(d[4])}</td>
+    </tr>
+  `).join("");
+  document.getElementById("districtCount").textContent = `${data.length} districts`;
+}
+
+function filterDistricts() {
+  const q = document.getElementById("districtSearch").value.toLowerCase();
+  const r = document.getElementById("riskFilter").value;
+  const s = document.getElementById("stateFilter").value;
+  const filtered = districts.filter(d =>
+    (d[2].toLowerCase().includes(q) || d[1].toLowerCase().includes(q)) &&
+    (!r || d[4] === r) &&
+    (!s || d[1] === s)
+  );
+  renderDistricts(filtered);
+}
+
+renderDistricts(districts);
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  event.target.classList.add("active");
+  setTimeout(() => initCharts(), 50);
+}
+
+// ─── CHART DEFAULTS ──────────────────────────────────────────────────────────
+Chart.defaults.color = "#64748b";
+Chart.defaults.borderColor = "#1e2d4a";
+Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+
+const chartInstances = {};
+
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+function initCharts() {
+  // Executive: State Risk
+  if (!chartInstances["stateRiskChart"] && document.getElementById("stateRiskChart")) {
+    destroyChart("stateRiskChart");
+    chartInstances["stateRiskChart"] = new Chart(document.getElementById("stateRiskChart"), {
+      type: "bar",
+      data: {
+        labels: ["Punjab","Uttar Pradesh","Haryana","Delhi","Rajasthan"],
+        datasets: [
+          { label: "Severe", data: [11,21,3,0,0], backgroundColor: "rgba(239,68,68,0.8)", borderRadius: 4 },
+          { label: "High",   data: [1,28,4,1,0],  backgroundColor: "rgba(249,115,22,0.8)", borderRadius: 4 },
+          { label: "Moderate", data: [5,18,5,0,7], backgroundColor: "rgba(234,179,8,0.8)", borderRadius: 4 },
+          { label: "Low",    data: [0,3,7,0,25],   backgroundColor: "rgba(34,197,94,0.8)", borderRadius: 4 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } },
+        scales: {
+          x: { stacked: true, grid: { color: "#1e2d4a" } },
+          y: { stacked: true, grid: { color: "#1e2d4a" } }
+        }
+      }
+    });
+  }
+
+  // Historical Chart
+  if (!chartInstances["historicalChart"] && document.getElementById("historicalChart")) {
+    destroyChart("historicalChart");
+    const colors = { Delhi:"#60a5fa", Haryana:"#f97316", Punjab:"#ef4444", Rajasthan:"#22c55e", UP:"#8b5cf6", National:"#fbbf24" };
+    chartInstances["historicalChart"] = new Chart(document.getElementById("historicalChart"), {
+      type: "line",
+      data: {
+        labels: historicalYears,
+        datasets: [
+          { label:"Delhi", data: historicalData.Delhi, borderColor: colors.Delhi, backgroundColor:"transparent", borderWidth:2, pointRadius:3 },
+          { label:"Haryana", data: historicalData.Haryana, borderColor: colors.Haryana, backgroundColor:"transparent", borderWidth:2, pointRadius:3 },
+          { label:"Punjab", data: historicalData.Punjab, borderColor: colors.Punjab, backgroundColor:"transparent", borderWidth:2, pointRadius:3 },
+          { label:"Rajasthan", data: historicalData.Rajasthan, borderColor: colors.Rajasthan, backgroundColor:"transparent", borderWidth:2, pointRadius:3 },
+          { label:"Uttar Pradesh", data: historicalData.UP, borderColor: colors.UP, backgroundColor:"transparent", borderWidth:2, pointRadius:3 },
+          { label:"National Avg", data: historicalData.National, borderColor: colors.National, backgroundColor:"transparent", borderWidth:2.5, borderDash:[5,3], pointRadius:3 },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: { legend: { position:"bottom", labels:{ boxWidth:10, font:{size:10} } } },
+        scales: {
+          x: { grid:{ color:"#1e2d4a" } },
+          y: { grid:{ color:"#1e2d4a" }, min: 0 }
+        }
+      }
+    });
+  }
+
+  // Scenario Chart
+  if (!chartInstances["scenarioChart"] && document.getElementById("scenarioChart")) {
+    destroyChart("scenarioChart");
+    chartInstances["scenarioChart"] = new Chart(document.getElementById("scenarioChart"), {
+      type: "line",
+      data: {
+        labels: [2030, 2050, 2070, 2100],
+        datasets: [
+          { label:"SSP1-2.6", data:[1.890,1.959,2.027,2.086], borderColor:"#22c55e", backgroundColor:"rgba(34,197,94,0.1)", borderWidth:2.5, fill:true, tension:0.4 },
+          { label:"SSP2-4.5", data:[1.914,2.027,2.141,2.230], borderColor:"#eab308", backgroundColor:"rgba(234,179,8,0.08)", borderWidth:2.5, fill:true, tension:0.4 },
+          { label:"SSP5-8.5", data:[1.935,2.107,2.266,2.304], borderColor:"#ef4444", backgroundColor:"rgba(239,68,68,0.08)", borderWidth:2.5, fill:true, tension:0.4 },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{ position:"bottom", labels:{ boxWidth:10, font:{size:10} } } },
+        scales: { x:{ grid:{color:"#1e2d4a"} }, y:{ grid:{color:"#1e2d4a"}, min:1.8 } }
+      }
+    });
+  }
+
+  // State Projection Chart
+  if (!chartInstances["stateProjectionChart"] && document.getElementById("stateProjectionChart")) {
+    destroyChart("stateProjectionChart");
+    chartInstances["stateProjectionChart"] = new Chart(document.getElementById("stateProjectionChart"), {
+      type: "bar",
+      data: {
+        labels: ["Delhi","Haryana","Punjab","Rajasthan","Uttar Pradesh"],
+        datasets: [
+          { label:"2030", data:[2.097,1.918,2.293,1.635,1.987], backgroundColor:"rgba(59,130,246,0.7)", borderRadius:3 },
+          { label:"2050", data:[2.244,2.060,2.350,1.794,2.202], backgroundColor:"rgba(249,115,22,0.7)", borderRadius:3 },
+          { label:"2070", data:[2.309,2.191,2.434,1.991,2.371], backgroundColor:"rgba(234,179,8,0.7)", borderRadius:3 },
+          { label:"2100", data:[2.325,2.236,2.469,2.062,2.392], backgroundColor:"rgba(239,68,68,0.7)", borderRadius:3 },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{ position:"bottom", labels:{ boxWidth:10, font:{size:10} } } },
+        scales: { x:{ grid:{color:"#1e2d4a"} }, y:{ grid:{color:"#1e2d4a"}, min:1.4 } }
+      }
+    });
+  }
+
+  // Model R² Chart
+  if (!chartInstances["modelChart"] && document.getElementById("modelChart")) {
+    destroyChart("modelChart");
+    chartInstances["modelChart"] = new Chart(document.getElementById("modelChart"), {
+      type: "bar",
+      data: {
+        labels: ["SVR","XGBoost","RandomForest","Prophet","LSTM","GRU","CNN-LSTM","Transformer"],
+        datasets: [
+          { label:"HWI", data:[0.636,0.536,0.453,-0.271,-0.031,-0.072,-0.075,-0.139], backgroundColor:"rgba(249,115,22,0.8)", borderRadius:4 },
+          { label:"HW Density", data:[0.492,0.284,0.064,-0.210,-0.346,-0.805,-0.394,-0.592], backgroundColor:"rgba(59,130,246,0.7)", borderRadius:4 },
+          { label:"HW Frequency", data:[0.228,0.105,0.069,-0.203,-0.357,-0.354,-0.541,-0.370], backgroundColor:"rgba(139,92,246,0.7)", borderRadius:4 },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{ position:"bottom", labels:{ boxWidth:10, font:{size:10} } } },
+        scales: {
+          x: { grid:{color:"#1e2d4a"} },
+          y: { grid:{color:"#1e2d4a"}, title:{ display:true, text:"R² Score" } }
+        }
+      }
+    });
+  }
+
+  // SHAP Chart
+  if (!chartInstances["shapChart"] && document.getElementById("shapChart")) {
+    destroyChart("shapChart");
+    chartInstances["shapChart"] = new Chart(document.getElementById("shapChart"), {
+      type: "bar",
+      data: {
+        labels: ["Max Temp","Heat Index","LST Lag1","RH Std","Temp Anomaly","Dew Point","Solar Lag2","Solar Lag7","Soil Moisture","RH Lag5"],
+        datasets: [{
+          label: "SHAP Importance (%)",
+          data: [16.9,10.1,9.6,7.2,6.2,5.3,3.8,3.6,3.4,3.4],
+          backgroundColor: [
+            "rgba(249,115,22,0.9)","rgba(249,115,22,0.8)","rgba(249,115,22,0.7)",
+            "rgba(249,115,22,0.65)","rgba(249,115,22,0.6)","rgba(59,130,246,0.7)",
+            "rgba(59,130,246,0.65)","rgba(59,130,246,0.6)","rgba(139,92,246,0.7)","rgba(139,92,246,0.65)",
+          ],
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, indexAxis:"y",
+        plugins: { legend:{ display:false } },
+        scales: {
+          x: { grid:{color:"#1e2d4a"}, title:{display:true, text:"SHAP %"} },
+          y: { grid:{color:"#1e2d4a"} }
+        }
+      }
+    });
+  }
+
+  // Category Pie
+  if (!chartInstances["categoryChart"] && document.getElementById("categoryChart")) {
+    destroyChart("categoryChart");
+    chartInstances["categoryChart"] = new Chart(document.getElementById("categoryChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Temperature","Heat Stress","Land Surface Temp","Humidity","Solar Radiation","Vegetation","Other"],
+        datasets: [{
+          data: [23.1, 10.1, 15.2, 18.5, 8.9, 1.6, 22.6],
+          backgroundColor: ["#f97316","#ef4444","#eab308","#3b82f6","#fbbf24","#22c55e","#8b5cf6"],
+          borderWidth: 0,
+        }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, cutout:"60%",
+        plugins: { legend:{ position:"bottom", labels:{ boxWidth:10, font:{size:10}, padding:10 } } }
+      }
+    });
+  }
+}
+
+// Init charts on load
+setTimeout(initCharts, 100);
+</script>
+</body>
+</html>
