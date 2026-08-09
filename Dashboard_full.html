@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhD Research Dashboard — Framework, Gaps &amp; 10-Phase Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg-deep:#0a0f1c; --bg-panel:#101a2e; --bg-panel-2:#0d1626;
+    --line:#20304d; --line-soft:#182540;
+    --text-1:#eef1f6; --text-2:#9aa6bd; --text-3:#6b7690;
+    --heat-1:#f4b942; --heat-2:#f0862f; --heat-3:#e5522b; --heat-4:#b81f2e;
+    --cool:#3fb7ac; --cool-dim:#2a5f5c; --radius:14px;
+    --part-a:#3fb7ac; --part-b:#e5522b;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0; background:var(--bg-deep); color:var(--text-1); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  ::selection{background:var(--heat-3); color:#fff;}
+  h1,h2,h3,.serif{font-family:'Fraunces',serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  code{font-family:'IBM Plex Mono',monospace; background:rgba(255,255,255,.06); padding:1px 5px; border-radius:4px; font-size:12.5px;}
+
+  #thermo{position:fixed; left:0; top:0; bottom:0; width:6px; z-index:80; background:var(--line-soft);}
+  #thermo-fill{position:absolute; left:0; top:0; width:100%; height:0%;
+    background:linear-gradient(to bottom, var(--cool), var(--heat-1), var(--heat-2), var(--heat-3), var(--heat-4));
+    transition:height .08s linear; box-shadow:0 0 12px rgba(229,82,43,.5);}
+
+  .shell{display:flex; min-height:100vh; padding-left:6px;}
+  nav.rail{width:250px; flex-shrink:0; position:sticky; top:0; align-self:flex-start; height:100vh; overflow-y:auto;
+    border-right:1px solid var(--line); background:var(--bg-panel-2); padding:26px 0;}
+  .rail-brand{padding:0 22px 20px 22px; border-bottom:1px solid var(--line); margin-bottom:6px;}
+  .rail-brand .kicker{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.14em; color:var(--heat-2); text-transform:uppercase;}
+  .rail-brand h1{font-size:16px; line-height:1.25; margin:8px 0 0 0; font-weight:600;}
+  .rail-part{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-3);
+    padding:14px 22px 6px 22px;}
+  .rail-item{display:flex; align-items:center; gap:10px; padding:8px 22px; cursor:pointer; border-left:3px solid transparent; color:var(--text-2); transition:.15s; font-size:12.5px;}
+  .rail-item:hover{color:var(--text-1); background:rgba(255,255,255,.02);}
+  .rail-item.active{color:var(--text-1); border-left-color:var(--heat-3); background:linear-gradient(90deg, rgba(229,82,43,.10), transparent);}
+  .rail-num{font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-3); width:20px;}
+  .rail-item.active .rail-num{color:var(--heat-2);}
+  main{flex:1; min-width:0;}
+
+  .hero{padding:84px 60px 52px 60px; border-bottom:1px solid var(--line);
+    background:radial-gradient(ellipse 900px 420px at 15% -10%, rgba(229,82,43,.16), transparent 60%),
+               radial-gradient(ellipse 700px 400px at 100% 0%, rgba(63,183,172,.10), transparent 60%);}
+  .hero .kicker{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.16em; color:var(--heat-2); text-transform:uppercase;}
+  .hero h1{font-size:clamp(27px,3.4vw,44px); font-weight:600; line-height:1.1; margin:14px 0 16px 0; max-width:880px;}
+  .hero p.lede{max-width:720px; color:var(--text-2); font-size:15.5px; line-height:1.65; margin:0 0 28px 0;}
+  .hero-stats{display:flex; flex-wrap:wrap; gap:0; border-top:1px solid var(--line); max-width:1000px;}
+  .hstat{padding:16px 22px 4px 0; margin-right:22px; border-right:1px solid var(--line); flex:1; min-width:126px;}
+  .hstat:last-child{border-right:none;}
+  .hstat .val{font-family:'IBM Plex Mono',monospace; font-size:20px; color:var(--text-1); font-weight:600;}
+  .hstat .lab{font-size:11px; color:var(--text-3); margin-top:3px;}
+
+  .part-banner{padding:26px 60px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:16px;}
+  .part-banner.a{background:linear-gradient(90deg, rgba(63,183,172,.14), transparent);}
+  .part-banner.b{background:linear-gradient(90deg, rgba(229,82,43,.14), transparent);}
+  .part-banner .pnum{font-family:'IBM Plex Mono',monospace; font-size:12px; padding:6px 14px; border-radius:999px; border:1px solid var(--line);}
+  .part-banner.a .pnum{color:var(--part-a); border-color:var(--cool-dim);}
+  .part-banner.b .pnum{color:var(--part-b); border-color:#5c2418;}
+  .part-banner h2{font-size:clamp(20px,2vw,26px); font-weight:600; margin:0;}
+  .part-banner p{margin:2px 0 0 0; font-size:13px; color:var(--text-3);}
+
+  section.phase{padding:60px 60px; border-bottom:1px solid var(--line); scroll-margin-top:20px;}
+  section.phase:nth-child(even){background:var(--bg-panel);}
+  .phase-eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--heat-2); letter-spacing:.08em;}
+  .phase-objective{color:var(--text-3); font-size:13px; font-style:italic; margin-bottom:22px;}
+  .phase-title{font-size:clamp(21px,2.2vw,28px); font-weight:600; margin:0 0 4px 0;}
+
+  .grid-2{display:grid; grid-template-columns:1.05fr 1fr; gap:38px; margin-top:24px;}
+  @media (max-width:980px){.grid-2{grid-template-columns:1fr;}}
+
+  .card-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(195px,1fr)); gap:14px; margin-top:6px;}
+  .card{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:15px 17px;}
+  section.phase:nth-child(even) .card{background:var(--bg-deep);}
+  .card h4{margin:0 0 8px 0; font-size:11.5px; color:var(--text-3); text-transform:uppercase; letter-spacing:.06em; font-weight:500; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .card p{margin:0 0 8px 0; font-size:13.5px; color:var(--text-2); line-height:1.6;}
+  .card ul{margin:0; padding-left:16px; font-size:13.5px; color:var(--text-2); line-height:1.6;}
+  .card .method{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font-size:11.5px; color:var(--cool); font-family:'IBM Plex Mono',monospace;}
+  .card .crit{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font-size:11.5px; color:var(--heat-1); font-family:'IBM Plex Mono',monospace; line-height:1.6;}
+
+  .chart-wrap{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px 8px 18px; height:320px; position:relative;}
+  section.phase:nth-child(even) .chart-wrap{background:var(--bg-deep);}
+  .chart-wrap canvas{max-height:100%;}
+  .fig-caption{font-size:11px; color:var(--text-3); margin-top:8px; text-align:center; font-style:italic;}
+
+  .interp{margin-top:26px; position:relative; padding:18px 22px 18px 50px; border:1px solid var(--line); border-left:3px solid var(--heat-3);
+    border-radius:0 var(--radius) var(--radius) 0; background:linear-gradient(90deg, rgba(229,82,43,.07), transparent 40%);}
+  .interp::before{content:"◆"; position:absolute; left:18px; top:18px; color:var(--heat-2); font-size:12px;}
+  .interp .interp-label{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--heat-2); margin-bottom:8px; display:block;}
+  .interp p{margin:0 0 9px 0; font-size:13.5px; line-height:1.68; color:var(--text-2);}
+  .interp p:last-child{margin-bottom:0;}
+  .interp b{color:var(--text-1); font-weight:600;}
+  .flag{color:var(--heat-1); font-weight:600;}
+
+  .alertbox{margin-top:26px; padding:18px 22px; border:1px solid var(--heat-4); border-radius:var(--radius);
+    background:linear-gradient(90deg, rgba(184,31,46,.12), transparent 60%);}
+  .alertbox .alabel{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--heat-4); margin-bottom:8px; display:block;}
+  .alertbox p{margin:0 0 8px 0; font-size:13px; line-height:1.65; color:var(--text-2);}
+
+  .kpi-strip{display:flex; flex-wrap:wrap; gap:9px; margin-top:18px;}
+  .kpi-chip{font-family:'IBM Plex Mono',monospace; font-size:11.5px; background:var(--bg-deep); border:1px solid var(--line); border-radius:999px; padding:6px 12px; color:var(--text-2);}
+  .kpi-chip b{color:var(--heat-1);}
+  section.phase:nth-child(even) .kpi-chip{background:var(--bg-panel-2);}
+
+  .src-link{color:var(--cool); text-decoration:none; font-size:11.5px; border-bottom:1px dotted var(--cool-dim);}
+  .src-link:hover{color:#fff; border-bottom-color:#fff;}
+
+  .gloss{position:relative; cursor:help; border-bottom:1px dotted var(--heat-2); color:var(--heat-1);
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; display:inline-block; padding:1px 3px;
+    background:rgba(244,185,66,.07); border-radius:4px;}
+  .gloss::after{content:attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 9px); transform:translateX(-50%) translateY(4px);
+    width:250px; max-width:64vw; background:#182540; color:var(--text-1); border:1px solid var(--line); padding:10px 12px;
+    border-radius:8px; font-family:'Inter',sans-serif; font-size:11.5px; font-weight:400; line-height:1.5; white-space:normal;
+    box-shadow:0 10px 30px rgba(0,0,0,.4); opacity:0; visibility:hidden; pointer-events:none; transition:.15s; z-index:40;}
+  .gloss::before{content:''; position:absolute; left:50%; bottom:calc(100% + 3px); transform:translateX(-50%);
+    border:6px solid transparent; border-top-color:var(--line); opacity:0; visibility:hidden; transition:.15s; z-index:41;}
+  .gloss:hover::after, .gloss:hover::before{opacity:1; visibility:visible; transform:translateX(-50%) translateY(0);}
+  .gloss-row{margin-top:10px; display:flex; flex-wrap:wrap; gap:7px 8px;}
+
+  table.datatable{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.datatable th{text-align:left; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--text-3); padding:9px 10px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg-panel-2); white-space:nowrap;}
+  section.phase:nth-child(even) table.datatable th{background:var(--bg-deep);}
+  table.datatable td{padding:9px 10px; border-bottom:1px solid var(--line-soft); color:var(--text-2); vertical-align:top;}
+  table.datatable tr:hover td{background:rgba(255,255,255,.02); color:var(--text-1);}
+  table.datatable tr.present-row td{background:rgba(229,82,43,.10); color:var(--text-1); font-weight:500;}
+  .table-scroll{max-height:430px; overflow:auto; border:1px solid var(--line); border-radius:var(--radius);}
+  .tag{display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 8px; border-radius:999px; border:1px solid var(--line-soft);}
+  .tag.imd{color:var(--cool); border-color:var(--cool-dim);}
+  .tag.modis{color:#7ea8e8; border-color:#2b3f61;}
+  .tag.era5{color:var(--heat-1); border-color:#5a441c;}
+  .tag.cpcb{color:var(--heat-3); border-color:#5c2418;}
+  .tag.derived{color:var(--text-2); border-color:var(--line);}
+
+  .matrix{width:100%; border-collapse:collapse; font-size:12px;}
+  .matrix th{font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-3);
+    padding:8px 8px; border-bottom:1px solid var(--line); text-align:center; background:var(--bg-panel-2);}
+  section.phase:nth-child(even) .matrix th{background:var(--bg-deep);}
+  .matrix th:first-child{text-align:left;}
+  .matrix td{padding:9px 8px; border-bottom:1px solid var(--line-soft); text-align:center;}
+  .matrix td:first-child{text-align:left; color:var(--text-1); font-weight:500;}
+  .yes{color:var(--cool); font-weight:700;}
+  .no{color:var(--heat-4); font-weight:700;}
+  .matrix tr.present-row td{background:rgba(229,82,43,.12);}
+
+  .toggle-row{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
+  .toggle-btn{font-family:'IBM Plex Mono',monospace; font-size:11px; padding:6px 12px; border-radius:999px; border:1px solid var(--line);
+    background:transparent; color:var(--text-2); cursor:pointer; transition:.15s;}
+  .toggle-btn.on{background:var(--heat-3); color:#fff; border-color:var(--heat-3);}
+
+  .ctrl-row{display:flex; flex-wrap:wrap; gap:14px; margin:18px 0; align-items:flex-end;}
+  .ctrl{display:flex; flex-direction:column; gap:6px;}
+  .ctrl label{font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-3);}
+  .ctrl select{background:var(--bg-deep); color:var(--text-1); border:1px solid var(--line); border-radius:8px; padding:9px 12px; font-family:'Inter',sans-serif; font-size:13px; min-width:180px;}
+  section.phase:nth-child(even) .ctrl select{background:var(--bg-panel-2);}
+
+  footer{padding:38px 60px 54px 60px; color:var(--text-3); font-size:12px;}
+  footer .line{border-top:1px solid var(--line); padding-top:22px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+
+  @media (max-width:820px){
+    nav.rail{display:none;}
+    .hero, section.phase, footer, .part-banner{padding-left:24px; padding-right:24px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="thermo"><div id="thermo-fill"></div></div>
+
+<div class="shell">
+  <nav class="rail" id="rail"></nav>
+
+  <main>
+    <section class="hero">
+      <div class="kicker">Chapters 1–3 · Unified Interactive Companion</div>
+      <h1>Why this thesis, what gap it closes, and the 10-phase pipeline that closes it.</h1>
+      <p class="lede">Part A covers the research problem, the structured gap analysis against six prior studies, the six objectives/hypotheses, and original contributions (Chapters 1–2). Part B walks the full 10-phase methodology exactly as diagrammed — from raw data collection through to final deliverables (per the Phase 1–10 figures).</p>
+      <div class="hero-stats">
+        <div class="hstat"><div class="val">5</div><div class="lab">research gaps (§2.10)</div></div>
+        <div class="hstat"><div class="val">6</div><div class="lab">objectives ↔ hypotheses</div></div>
+        <div class="hstat"><div class="val">10</div><div class="lab">pipeline phases</div></div>
+        <div class="hstat"><div class="val">7,956</div><div class="lab">district-year rows (306×26)</div></div>
+        <div class="hstat"><div class="val">0.998</div><div class="lab">final GBM R² (full-data refit)</div></div>
+      </div>
+    </section>
+
+    <!-- ================= PART A BANNER ================= -->
+    <div class="part-banner a">
+      <span class="pnum">PART A</span>
+      <div><h2>Why this thesis — problem, gaps, objectives</h2><p>Chapters 1–2 · Introduction &amp; Literature Review</p></div>
+    </div>
+
+    <!-- ============ A1 PROBLEM STATEMENT ============ -->
+    <section class="phase" id="a1" data-title="Problem &amp; Rationale">
+      <div class="phase-eyebrow">§1.5 – 1.6</div>
+      <h2 class="phase-title">Problem statement &amp; rationale</h2>
+      <div class="phase-objective">The gap between rapidly advancing ML methods and their underutilisation in operational Indian heatwave prediction</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>Narrow geographic scope</h4><p>Existing studies tend to focus on single states or meteorological subdivisions.</p></div>
+            <div class="card"><h4>Limited predictor sets</h4><p>MODIS LST/NDVI rarely combined with conventional met. observations.</p></div>
+            <div class="card"><h4>Narrow algorithm comparison</h4><p>A narrow range of algorithms applied without systematic comparative evaluation.</p></div>
+            <div class="card"><h4>No CMIP6 SSP translation</h4><p>Translating ML skill into future SSP-scenario projections remains largely unexplored for India.</p></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartRationale"></canvas><div class="fig-caption">Three pillars of rationale (§1.6): public health, scientific, policy</div></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Why this matters</span>
+        <p><b>~45% of the national workforce</b> works in outdoor agriculture, construction, or informal labour with little capacity to avoid peak heat exposure, and the <b>2015 heatwave caused &gt;2,500 recorded deaths</b>. Better lead time on prediction supports earlier activation of Heat Action Plans.</p>
+      </div>
+    </section>
+
+    <!-- ============ A2 RESEARCH GAP ============ -->
+    <section class="phase" id="a2" data-title="Research Gap Analysis">
+      <div class="phase-eyebrow">§1.12 &amp; §2.10</div>
+      <h2 class="phase-title">Research gap analysis</h2>
+      <div class="phase-objective">Five gaps identified through the literature review, and a structured study-by-study comparison</div>
+
+      <div class="card-row">
+        <div class="card"><h4>Gap 1 — Regional</h4><p>ML heatwave prediction is well developed for Europe, North America, East Asia; comparable South Asia / India work remains limited.</p></div>
+        <div class="card"><h4>Gap 2 — Data integration</h4><p>Studies typically use meteorological <i>or</i> remote-sensing predictors, rarely both in one framework.</p></div>
+        <div class="card"><h4>Gap 3 — Algorithmic rigor</h4><p>Rigorous systematic comparison across traditional ML <i>and</i> deep learning in one framework is lacking for India.</p></div>
+        <div class="card"><h4>Gap 4 — Future-scenario</h4><p>Explicit CMIP6 integration into ML heatwave frameworks remains understudied.</p></div>
+        <div class="card"><h4>Gap 5 — Interpretability</h4><p>SHAP / permutation importance rarely applied comprehensively at national scale for India.</p></div>
+      </div>
+
+      <h3 style="font-size:16px; margin:32px 0 12px 0; font-weight:600;">Table 1.2 — Prior studies vs. present research</h3>
+      <div class="table-scroll"><table class="datatable" id="table12"></table></div>
+
+      <h3 style="font-size:16px; margin:28px 0 6px 0; font-weight:600;">Coverage matrix</h3>
+      <div class="table-scroll"><table class="matrix" id="matrixGap"></table></div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>The chapter's framing: <i>"no prior study addresses all five limitations simultaneously."</i> Nair et al. (2022) and Shankar et al. (2021) are the closest India-specific comparators. This study's novelty is <b>combinatorial</b> — no single element is entirely new in isolation, but the combination at this scale is argued to be.</p>
+      </div>
+    </section>
+
+    <!-- ============ A3 OBJECTIVES & HYPOTHESES ============ -->
+    <section class="phase" id="a3" data-title="Objectives &amp; Hypotheses">
+      <div class="phase-eyebrow">§1.7 – 1.8</div>
+      <h2 class="phase-title">Research objectives ↔ hypotheses</h2>
+      <div class="phase-objective">§1.8 Research Hypotheses — six objectives, each paired with a null (H₀) / alternative (H₁) hypothesis</div>
+
+      <div class="ctrl-row">
+        <div class="ctrl"><label>Jump to</label>
+          <select id="obj-select">
+            <option value="0">Hypothesis 1 — Historical Patterns and Trends</option>
+            <option value="1">Hypothesis 2 — ML vs. Traditional Statistical Methods</option>
+            <option value="2">Hypothesis 3 — Model Accuracy, Reliability &amp; Generalizability</option>
+            <option value="3">Hypothesis 4 — Accuracy of Future Projections</option>
+            <option value="4">Hypothesis 5 — Combining Historical Data with Future Projections</option>
+            <option value="5">Hypothesis 6 — Influential Climatic Variables</option>
+          </select>
+        </div>
+      </div>
+      <div id="obj-detail"></div>
+
+      <h3 style="font-size:16px; margin:30px 0 10px 0; font-weight:600;">All six objective–hypothesis pairs</h3>
+      <div class="table-scroll"><table class="datatable" id="tableHypoAll"></table></div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>Each objective is tested through a classical <b>null-hypothesis significance testing (NHST)</b> pair. The six pairs form a logical chain: O1/H1 must hold before O2/H2 is meaningful; O3/H3 (generalisation) gates whether O4/H4 (future projections) can be trusted; O5/H5 tests whether fusing historical + future data adds robustness; O6/H6 asks whether specific climatic variables — not random variation — drive heatwave intensity.</p>
+      </div>
+    </section>
+
+    <!-- ============ A4 SCOPE & DATA ============ -->
+    <section class="phase" id="a4" data-title="Scope &amp; Data Sources">
+      <div class="phase-eyebrow">§1.9 – 1.10</div>
+      <h2 class="phase-title">Scope, delimitations &amp; data sources</h2>
+      <div class="phase-objective">10 states · 306 districts · 2000–2025 historical, 2024–2050 projected (Chapter 1 framing)</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>Geographic scope</h4><ul><li>Delhi, Haryana, Punjab, Rajasthan, Uttar Pradesh</li><li>40 districts — highest heatwave activity &amp; vulnerability</li></ul></div>
+            <div class="card"><h4>Temporal scope</h4><ul><li>Historical: 2000–2025</li><li>Train 2005–2017 · Val 2018–2020 · Test 2021–2023</li><li>Future projections: 2024–2050</li></ul></div>
+            <div class="card"><h4>Thematic scope</h4><ul><li>Physical climate drivers only</li><li>Socioeconomic vulnerability = context, not model input</li></ul></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartScope"></canvas><div class="fig-caption">Historical / train / validation / test / projection windows</div></div>
+      </div>
+
+      <h3 style="font-size:16px; margin:28px 0 10px 0; font-weight:600;">Table 1.1 — Primary data sources</h3>
+      <div class="table-scroll"><table class="datatable" id="table11"></table></div>
+    </section>
+
+    <!-- ============ A5 CONTRIBUTIONS ============ -->
+    <section class="phase" id="a5" data-title="Original Contributions">
+      <div class="phase-eyebrow">§1.14</div>
+      <h2 class="phase-title">Original contributions of the research</h2>
+      <div class="phase-objective">Six claimed contributions, each tied to a specific gap</div>
+      <div class="card-row" id="contribCards"></div>
+    </section>
+
+    <!-- ================= PART B BANNER ================= -->
+    <div class="part-banner b">
+      <span class="pnum">PART B</span>
+      <div><h2>The 10-phase research pipeline</h2><p>As diagrammed — raw data → deliverables (Phase 1 / 10 through Phase 10 / 10)</p></div>
+    </div>
+
+    <!-- ============ B1 ============ -->
+    <section class="phase" id="b1" data-title="Phase 1 — Raw Data Collection">
+      <div class="phase-eyebrow">PHASE 1 / 10</div>
+      <h2 class="phase-title">Raw data collection</h2>
+      <div class="phase-objective">Objective 1: Historical records &amp; climatic variables, 2000–2025</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>IMD gridded meteorological<a class="src-link" href="https://mausam.imd.gov.in/" target="_blank" rel="noopener">source ↗</a></h4><ul><li>Tmax, Tmin, Rainfall</li><li>Relative Humidity, Wind Speed</li></ul></div>
+            <div class="card"><h4>MODIS satellite<a class="src-link" href="https://modis.gsfc.nasa.gov/" target="_blank" rel="noopener">source ↗</a></h4><ul><li>LST (MOD11A1), NDVI (MOD13A1)</li><li>Surface Albedo, Vegetation Index</li></ul></div>
+            <div class="card"><h4>ERA5 reanalysis<a class="src-link" href="https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5" target="_blank" rel="noopener">source ↗</a></h4><ul><li>RH, Wind Speed, Pressure</li><li>Dew Point, Solar Radiation</li></ul></div>
+            <div class="card"><h4>CPCB air quality<a class="src-link" href="https://cpcb.nic.in/" target="_blank" rel="noopener">source ↗</a></h4><ul><li>PM2.5</li></ul></div>
+          </div>
+          <div class="kpi-strip">
+            <div class="kpi-chip">Districts: <b>306</b></div>
+            <div class="kpi-chip">Years: <b>2000–2025</b></div>
+            <div class="kpi-chip">Combined variables: <b>22</b></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart1"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>Four independent observation systems — station data (IMD), satellite remote sensing (MODIS), global reanalysis (ERA5), regulatory air-quality monitoring (CPCB) — triangulate the heat signal from complementary vantage points, mitigating single-instrument bias. <b>HWF</b> and <b>HWI</b> are derived directly from IMD's operational temperature-based heatwave criteria.</p>
+      </div>
+    </section>
+
+    <!-- ============ B2 ============ -->
+    <section class="phase" id="b2" data-title="Phase 2 — QC">
+      <div class="phase-eyebrow">PHASE 2 / 10</div>
+      <h2 class="phase-title">Data preparation &amp; quality control</h2>
+      <div class="phase-objective">Objective 2: Prepare a clean, consistent, and reliable dataset</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>2.1 Data cleaning</h4><ul><li>Missing values, outlier capping</li><li>Duplicate / inconsistency removal</li></ul><div class="method">Interpolation · IQR/3σ rule</div></div>
+            <div class="card"><h4>2.2 Data transformation</h4><ul><li>Daily → annual, district aggregation</li><li>Scaling, categorical encoding</li></ul><div class="method">Min–Max scaling · One-Hot</div></div>
+            <div class="card"><h4>2.3 Quality control</h4><ul><li>Range/consistency, cross-source checks</li><li>Multicollinearity (VIF)</li></ul><div class="method">VIF &lt; 10</div></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart2"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>QC precedes modelling. VIF &lt; 10 controls multicollinearity (e.g. Tmax vs. LST) that would otherwise inflate variance and destabilise SHAP attribution later. Row count is unchanged (7,956) — cleaning corrected values in place.</p>
+      </div>
+    </section>
+
+    <!-- ============ B3 ============ -->
+    <section class="phase" id="b3" data-title="Phase 3 — Feature Engineering">
+      <div class="phase-eyebrow">PHASE 3 / 10</div>
+      <h2 class="phase-title">Feature engineering</h2>
+      <div class="phase-objective">Objective 3: Enhance information &amp; extract predictive patterns</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>3.1 Lag features</h4><ul><li>Lagged versions of key variables</li></ul>
+              <div class="gloss-row">
+                <span class="gloss" data-tip="Value from 1 year earlier (t−1).">lag1</span>
+                <span class="gloss" data-tip="Value from 2 years earlier (t−2).">lag2</span>
+                <span class="gloss" data-tip="Value from 3 years earlier (t−3).">lag3</span>
+                <span class="gloss" data-tip="Value from 6 years earlier (t−6).">lag6</span>
+                <span class="gloss" data-tip="Value from 12 years earlier (t−12).">lag12</span>
+              </div>
+            </div>
+            <div class="card"><h4>3.2 Rolling statistics</h4><ul><li>Rolling mean, median, std</li></ul>
+              <div class="gloss-row">
+                <span class="gloss" data-tip="Trailing 3-year rolling window.">roll3</span>
+                <span class="gloss" data-tip="Trailing 6-year rolling window.">roll6</span>
+                <span class="gloss" data-tip="Trailing 12-year rolling window.">roll12</span>
+                <span class="gloss" data-tip="Trailing 24-year rolling window.">roll24</span>
+              </div>
+            </div>
+            <div class="card"><h4>3.3 Interactions</h4><ul><li>LST×NDVI, Temp×RH, PM2.5×HWF</li></ul></div>
+            <div class="card"><h4>3.4 Derived indices</h4><ul><li>HSI, HWI, DTR, Heat_Accum, VCI</li></ul></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart3"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>Feature count expands from 22 raw variables to <b>73+ engineered features</b> per this pipeline's figures. Lag/rolling features encode system <b>memory</b> (heat accumulation, moisture persistence) a contemporaneous-only feature set cannot capture.</p>
+      </div>
+    </section>
+
+    <!-- ============ B4 ============ -->
+    <section class="phase" id="b4" data-title="Phase 4 — Train/Test Split">
+      <div class="phase-eyebrow">PHASE 4 / 10</div>
+      <h2 class="phase-title">Temporal train / test split</h2>
+      <div class="phase-objective">Chronological split to ensure robust model validation and avoid data leakage</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>Train — 2000–2017</h4><ul><li>~5,569 rows (70%)</li></ul></div>
+            <div class="card"><h4>Test — 2018–2025</h4><ul><li>~2,387 rows (30%)</li></ul></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart4"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>A chronological — not random — split is essential given strong autocorrelation in climate data. Same principle enforced inside <i>TimeSeriesSplit</i> CV (Phase 5) and Leave-One-Region-Out validation (Phase 6).</p>
+      </div>
+    </section>
+
+    <!-- ============ B5 ============ -->
+    <section class="phase" id="b5" data-title="Phase 5 — ML Models">
+      <div class="phase-eyebrow">PHASE 5 / 10</div>
+      <h2 class="phase-title">Machine learning model development &amp; training</h2>
+      <div class="phase-objective">Objective 3: Develop and evaluate leakage-free predictive models for HWI</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>Candidates</h4><ul><li>Linear, Ridge, Random Forest</li><li><b style="color:var(--heat-1)">Gradient Boosting ★ primary</b></li><li>SVR (RBF), MLP Regressor</li></ul></div>
+            <div class="card"><h4>Validation strategy</h4><ul><li>TimeSeriesSplit, k=5, no shuffle</li><li>GridSearchCV tuning</li></ul></div>
+            <div class="card"><h4>Leakage-free set</h4><ul><li><code>HSI_lag1</code>, <code>HSI_roll3</code> removed</li></ul></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart5"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>Six model families benchmarked under identical leakage-free, time-aware CV — isolating the comparison to model capacity. Removing <code>HSI_lag1</code>/<code>HSI_roll3</code> prevents the model from "cheating" via nowcasting.</p>
+      </div>
+    </section>
+
+    <!-- ============ B6 ============ -->
+    <section class="phase" id="b6" data-title="Phase 6 — Validation">
+      <div class="phase-eyebrow">PHASE 6 / 10</div>
+      <h2 class="phase-title">Model validation &amp; performance evaluation</h2>
+      <div class="phase-objective">Objective 4: Assess model robustness, accuracy, and generalisability</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>Temporal 5-fold CV</h4><div class="method">Mean R² 0.911 ± 0.013</div></div>
+            <div class="card"><h4>Spatial LORO-CV</h4><div class="method">Mean R² 0.875 ± 0.022</div></div>
+            <div class="card"><h4>Test set (2018–2025)</h4><div class="method">R² 0.982 · RMSE 0.162 · MAE 0.123 · TSS 0.951</div></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart6"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>Spatial LORO-CV (0.875) is the more demanding test — it withholds an entire region, and its modestly lower score vs. temporal CV (0.911) is expected: it quantifies genuine geographic transferability rather than memorised local patterns.</p>
+      </div>
+    </section>
+
+    <!-- ============ B7 ============ -->
+    <section class="phase" id="b7" data-title="Phase 7 — Feature Importance">
+      <div class="phase-eyebrow">PHASE 7 / 10</div>
+      <h2 class="phase-title">Feature importance analysis</h2>
+      <div class="phase-objective">Objective 5: Identify the most influential climatic drivers for HWI</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>Native GBDT gain</h4><ul><li>Mean decrease in impurity</li></ul></div>
+            <div class="card"><h4>Permutation importance</h4><ul><li>30 permutations × 10 repeats</li></ul></div>
+            <div class="card"><h4>SHAP analysis</h4><ul><li>TreeExplainer, global &amp; local</li></ul></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart7"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p><b>Max_Temp_roll3</b> topping all three rankings confirms short-term temperature accumulation — not a single day's reading — is the dominant driver, followed by LST persistence (<code>LST_lag1</code>) and heatwave frequency (<code>HWF</code>).</p>
+      </div>
+    </section>
+
+    <!-- ============ B8 ============ -->
+    <section class="phase" id="b8" data-title="Phase 8 — Historical EDA">
+      <div class="phase-eyebrow">PHASE 8 / 10</div>
+      <h2 class="phase-title">Historical EDA &amp; trend analysis</h2>
+      <div class="phase-objective">Objective 7: Detect patterns, trends and long-term changes (2000–2025)</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>Theil–Sen &amp; Mann–Kendall</h4><ul><li>Non-parametric trend detection</li></ul></div>
+            <div class="card"><h4>Spearman correlation</h4><ul><li>Monotonic relationships</li></ul></div>
+            <div class="card"><h4>State-wise EDA</h4><ul><li>Summary stats, state ranking</li></ul></div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart8"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>Non-parametric methods are robust to the non-normal, outlier-prone distributions typical of climate extremes — a single anomalous year should not dominate the trend the way it can in an OLS fit.</p>
+      </div>
+    </section>
+
+    <!-- ============ B9 ============ -->
+    <section class="phase" id="b9" data-title="Phase 9 — Future Projections">
+      <div class="phase-eyebrow">PHASE 9 / 10</div>
+      <h2 class="phase-title">Future projections, 2026–2100</h2>
+      <div class="phase-objective">Objectives 8 &amp; 9: Project future HWI under <a class="src-link" href="https://wcrp-cmip.org/cmip6/" target="_blank" rel="noopener">CMIP6 ↗</a> SSP scenarios using Bootstrap CI with district-level downscaling</div>
+
+      <div class="grid-2">
+        <div>
+          <div class="card-row">
+            <div class="card"><h4>Theil–Sen extrapolation</h4><ul><li>Extends 2000–2025 trends per district</li></ul></div>
+            <div class="card"><h4>Feature rebuilding</h4><ul><li>Scenario-wise feature generation</li></ul></div>
+            <div class="card"><h4>GBM prediction</h4><ul><li>District-level, per scenario/time-step</li></ul></div>
+            <div class="card"><h4>Bootstrap CI</h4><ul><li>B = 1,000 iterations</li><li>33 resampled districts/iteration</li></ul><div class="method">5th–95th percentile CI</div></div>
+          </div>
+          <div class="toggle-row" id="ssp-toggles" style="margin-top:14px;"></div>
+        </div>
+        <div class="chart-wrap"><canvas id="chart9"></canvas></div>
+      </div>
+
+      <div class="interp">
+        <span class="interp-label">Scientific interpretation</span>
+        <p>Bootstrap resampling across districts (B=1,000) propagates spatial sampling uncertainty into a 90% CI. Divergence between <b>SSP1-2.6</b> (mitigation) and <b>SSP5-8.5</b> (high emissions) by end-century is the expected signature of a well-behaved climate-sensitive model.</p>
+      </div>
+    </section>
+
+    <!-- ============ B10 ============ -->
+    <section class="phase" id="b10" data-title="Phase 10 — Outputs">
+      <div class="phase-eyebrow">PHASE 10 / 10</div>
+      <h2 class="phase-title">Research outputs &amp; deliverables</h2>
+      <div class="phase-objective">Objective 6: Communicate results and provide reproducible, decision-ready deliverables</div>
+
+      <div class="card-row">
+        <div class="card"><h4>10.1 Figures</h4><ul><li>Publication-ready plots, maps, heatmaps</li></ul></div>
+        <div class="card"><h4>10.2 CSVs</h4><ul><li>Historical + future, scenario-wise, with CI</li></ul></div>
+        <div class="card"><h4>10.3 Saved models</h4><ul><li>Trained GBM pipeline, versioned</li></ul></div>
+        <div class="card"><h4>10.4 PhD chapters</h4><ul><li>Methodology, results, discussion</li></ul></div>
+      </div>
+
+      <div class="interp" style="margin-top:26px;">
+        <span class="interp-label">Overall achievement</span>
+        <p>All six research objectives satisfied end-to-end. Best model per these pipeline figures: <b>Gradient Boosting, R² = 0.9980</b> (full-data refit); test-set R² = 0.982.</p>
+      </div>
+    </section>
+
+    <!-- ============ CROSS-DOCUMENT CONSISTENCY ============ -->
+    <section class="phase" id="cc" data-title="Cross-Document Consistency">
+      <div class="phase-eyebrow">⚠ QUALITY CHECK</div>
+      <h2 class="phase-title">Cross-document consistency check</h2>
+      <div class="phase-objective">Chapter 1 (prose) vs. Chapter 3 (prose) vs. these Phase 1–10 diagrams — three sources, three different numbers in places</div>
+
+      <div class="alertbox">
+        <span class="alabel">Why this table exists</span>
+        <p>This dashboard's Part B follows the <b>Phase 1–10 diagrams</b> exactly, since that's what was asked. But those diagrams don't always agree with the prose in Chapter 1 or Chapter 3 — worth reconciling before submission.</p>
+      </div>
+      <div class="table-scroll" style="margin-top:14px;"><table class="datatable" id="tableConsistency"></table></div>
+    </section>
+
+    <footer>
+      <div class="line">
+        <span>PhD Research Dashboard · Part A (Ch.1–2) + Part B (10-Phase Pipeline)</span>
+        <span class="mono">5 gaps · 6 hypotheses · 10 phases · GBM R² 0.9980</span>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<script>
+Chart.defaults.color = '#9aa6bd';
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.borderColor = '#20304d';
+const heat = ['#f4b942','#f0862f','#e5522b','#b81f2e'];
+const cool = '#3fb7ac';
+const gridColor = '#182540';
+function baseGrid(){ return { grid:{color:gridColor, drawTicks:false}, ticks:{color:'#6b7690', font:{size:11}} }; }
+
+/* ===== PART A charts/tables ===== */
+new Chart(document.getElementById('chartRationale'), {
+  type:'doughnut',
+  data:{ labels:['Public health (Heat Action Plans)','Scientific (driver understanding)','Policy (NAPCC adaptation planning)'],
+    datasets:[{ data:[1,1,1], backgroundColor:[heat[2],cool,heat[0]], borderColor:'#0a0f1c', borderWidth:3 }]},
+  options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10,font:{size:11}}}, title:{display:true,text:'Three pillars of rationale (§1.6)', color:'#eef1f6', font:{size:12.5,weight:'600'}}}, cutout:'55%' }
+});
+
+const table12 = [
+  ['Rohini et al. [4] (2016)','India, IMD subdivisions','Linear trend, Mann–Kendall','IMD station data','No ML; no projections','ML-based prediction; CMIP6 projections',false],
+  ['Pai et al. [3] (2013)','India, station-level','Climatological analysis','IMD surface obs','No predictive model; no satellite data','Predictive framework; MODIS integration',false],
+  ['Mishra et al. [15] (2017)','India, CMIP5 ensemble','Statistical downscaling','CMIP5 models','No ML; no feature importance','Six ML algorithms; permutation/SHAP importance',false],
+  ['Nair et al. [27] (2022)','Selected Indian states','XGBoost (single algorithm)','IMD + MODIS (partial)','Single algorithm; no CMIP6 SSP','Multi-algorithm comparison; SSP2-4.5/5-8.5',false],
+  ['Chattopadhyay et al. [19] (2020)','USA, global patterns','CNN for circulation','Reanalysis data','Not India-specific','India-specific; HWI as health-relevant target',false],
+  ['Shankar et al. [28] (2021)','India (limited states)','CNN-LSTM hybrid','IMD + ERA5','Two states only; no future projections','District-level; 2024–2050 projections',false],
+  ['PRESENT STUDY','10 states, 306 districts','6 ML algorithms + GridSearchCV','IMD+ERA5+MODIS+CPCB+CMIP6','—','Addresses all above gaps',true]
+];
+document.getElementById('table12').innerHTML = '<thead><tr><th>Study</th><th>Region/scale</th><th>Method</th><th>Dataset</th><th>Limitation</th><th>Gap addressed here</th></tr></thead><tbody>' +
+  table12.map(r=>`<tr class="${r[6]?'present-row':''}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('') + '</tbody>';
+
+const dims = ['Uses ML','Multi-source data','Multi-algorithm comparison','CMIP6 SSP projections','Multi-method feature importance'];
+const studies = [
+  {name:'Rohini et al. (2016)', cov:[0,0,0,0,0]}, {name:'Pai et al. (2013)', cov:[0,0,0,0,0]}, {name:'Mishra et al. (2017)', cov:[0,0,0,0,0]},
+  {name:'Nair et al. (2022)', cov:[1,1,0,0,0]}, {name:'Chattopadhyay et al. (2020)', cov:[1,0,0,0,0]}, {name:'Shankar et al. (2021)', cov:[1,1,0,0,0]},
+  {name:'PRESENT STUDY', cov:[1,1,1,1,1], present:true}
+];
+document.getElementById('matrixGap').innerHTML = '<thead><tr><th>Study</th>' + dims.map(d=>`<th>${d}</th>`).join('') + '</tr></thead><tbody>' +
+  studies.map(s=>`<tr class="${s.present?'present-row':''}"><td>${s.name}</td>${s.cov.map(c=>`<td>${c? '<span class=\"yes\">✓</span>':'<span class=\"no\">✗</span>'}</td>`).join('')}</tr>`).join('') + '</tbody>';
+
+const objHypo = [
+ {o:'Hypothesis 1 — Historical Patterns and Trends', otext:'To investigate historical temperature records, atmospheric conditions, and other relevant climatic variables to identify patterns and trends associated with heatwaves.',
+  h0:'There are no significant patterns or trends in historical temperature records, atmospheric conditions, and other relevant climatic variables associated with heatwaves.',
+  h1:'There are significant patterns and trends in historical temperature records, atmospheric conditions, and other relevant climatic variables associated with heatwaves.'},
+ {o:'Hypothesis 2 — Machine Learning vs. Traditional Statistical Methods', otext:'To utilize various machine learning algorithms to build and optimize predictive models for heatwaves.',
+  h0:'There is no significant improvement in the accuracy and reliability of heatwave predictions when using machine learning algorithms compared to traditional statistical methods.',
+  h1:'There is a significant improvement in the accuracy and reliability of heatwave predictions when using machine learning algorithms compared to traditional statistical methods.'},
+ {o:'Hypothesis 3 — Model Accuracy, Reliability, and Generalizability', otext:'To assess the accuracy and reliability of the developed models using appropriate performance metrics and validation techniques, ensuring they generalize well across different regions and climate scenarios.',
+  h0:'The developed machine learning models do not significantly differ in accuracy and reliability when assessed using appropriate performance metrics and validation techniques, and they do not generalize well across different regions and climate scenarios.',
+  h1:'The developed machine learning models significantly differ in accuracy and reliability when assessed using appropriate performance metrics and validation techniques, and they generalize well across different regions and climate scenarios.'},
+ {o:'Hypothesis 4 — Accuracy of Future Projections', otext:'Use the validated models to project future heatwave occurrences under different climate change scenarios, providing actionable insights for mitigation and adaptation strategies.',
+  h0:'The validated machine learning models do not significantly improve the accuracy of projections for future heatwave occurrences under different climate change scenarios compared to traditional predictive methods.',
+  h1:'The validated machine learning models significantly improve the accuracy of projections for future heatwave occurrences under different climate change scenarios compared to traditional predictive methods.'},
+ {o:'Hypothesis 5 — Combining Historical Data with Future Projections', otext:'To combine historical climate data with future projections to enhance the accuracy and robustness of heatwave predictions, accounting for various greenhouse gas emission scenarios.',
+  h0:'Combining historical climate data with future projections does not significantly enhance the accuracy and robustness of heatwave predictions, and the performance of the predictive models remains unchanged when accounting for various greenhouse gas emission scenarios.',
+  h1:'Combining historical climate data with future projections significantly enhances the accuracy and robustness of heatwave predictions, resulting in improved performance of the predictive models when accounting for various greenhouse gas emission scenarios.'},
+ {o:'Hypothesis 6 — Influential Climatic Variables', otext:'To determine the most influential climatic variables that contribute to the occurrence and intensity of heatwaves, providing a deeper understanding of the underlying mechanisms.',
+  h0:'There are no significant climatic variables that influence the occurrence and intensity of heatwaves — any observed relationships are due to random variation.',
+  h1:'There are significant climatic variables that influence the occurrence and intensity of heatwaves, and understanding these variables can provide insights into the underlying mechanisms of heatwave events.'}
+];
+function renderObjDetail(i){
+  const d = objHypo[i];
+  document.getElementById('obj-detail').innerHTML = `
+    <div class="grid-2" style="margin-top:4px;">
+      <div class="card"><h4>${d.o}</h4><p>${d.otext}</p></div>
+      <div>
+        <div class="card" style="border-left:3px solid var(--heat-4); margin-bottom:12px;"><h4>H₀ — Null hypothesis</h4><p>${d.h0}</p></div>
+        <div class="card" style="border-left:3px solid var(--cool);"><h4>H₁ — Alternative hypothesis</h4><p>${d.h1}</p></div>
+      </div>
+    </div>`;
+}
+document.getElementById('obj-select').addEventListener('change', e=>renderObjDetail(+e.target.value));
+renderObjDetail(0);
+document.getElementById('tableHypoAll').innerHTML = '<thead><tr><th>#</th><th>Hypothesis / linked objective</th><th>H₀ (null)</th><th>H₁ (alternative)</th></tr></thead><tbody>' +
+  objHypo.map((d,i)=>`<tr><td class="mono">H${i+1}</td><td>${d.o.replace(/^Hypothesis \d+\s—\s/,'')}</td><td>${d.h0}</td><td>${d.h1}</td></tr>`).join('') + '</tbody>';
+
+new Chart(document.getElementById('chartScope'), {
+  type:'bar',
+  data:{ labels:['Historical record','Train','Validation','Test','Future projection'],
+    datasets:[{ label:'span', data:[26,13,3,3,27], backgroundColor:[cool,heat[0],heat[1],heat[2],heat[3]], borderRadius:6, base:[2000,2005,2018,2021,2024] }]},
+  options:{ indexAxis:'y', plugins:{legend:{display:false}, title:{display:true, text:'2000–2050 timeline (Ch.1 framing)', color:'#eef1f6', font:{size:12,weight:'600'}}},
+    scales:{ x:{min:2000, max:2051, ...baseGrid()}, y:{grid:{display:false}} } }
+});
+
+const table11 = [
+  ['IMD Gridded Temperature','Tmax, Tmin, Tmean, Rainfall','0.25° daily','1951–2023','https://mausam.imd.gov.in/'],
+  ['ERA5 Reanalysis (ECMWF)','500 hPa height, wind, humidity, soil moisture','0.25° 6-hourly','1979–2023','https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5'],
+  ['MODIS MOD11A2 (NASA)','Land Surface Temperature (LST)','1 km, 8-day','2000–2023','https://lpdaac.usgs.gov/'],
+  ['MODIS MOD13A2 (NASA)','NDVI, Vegetation Index','1 km, 16-day','2000–2023','https://lpdaac.usgs.gov/'],
+  ['CPCB + Sentinel-5P TROPOMI','PM2.5 concentration','Station / 3.5 km daily','2015–2023','https://cpcb.nic.in/'],
+  ['CMIP6 Multi-model Ensemble','Tmax, LST, circulation predictors','~1° monthly','2015–2050','https://wcrp-cmip.org/cmip6/']
+];
+document.getElementById('table11').innerHTML = '<thead><tr><th>Source</th><th>Variables</th><th>Resolution</th><th>Period</th></tr></thead><tbody>' +
+  table11.map(r=>`<tr><td><a class="src-link" href="${r[4]}" target="_blank" rel="noopener">${r[0]} ↗</a></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('') + '</tbody>';
+
+const contributions = [
+  ['1. Multi-algorithm comparative framework','Systematic evaluation of six ML algorithm classes for HWI prediction across five states.'],
+  ['2. Multi-source data integration','MODIS LST/NDVI + met. + reanalysis + air-quality data in one framework, with ablation-quantified evidence of each source\'s value.'],
+  ['3. Rigorous validation methodology','Temporally blocked + spatially stratified cross-validation for Indian heatwave ML models.'],
+  ['4. District-level CMIP6 projections','Probabilistic district-level projections under SSP scenarios with explicit uncertainty quantification.'],
+  ['5. Three-method feature importance','Consensus ranking from gain, permutation, and sensitivity analysis.'],
+  ['6. Geographic transferability assessment','Spatial LORO-CV with Mahalanobis distance as a predictor of cross-region skill degradation.']
+];
+document.getElementById('contribCards').innerHTML = contributions.map(c=>`<div class="card"><h4>${c[0]}</h4><p>${c[1]}</p></div>`).join('');
+
+/* ===== PART B charts (Phase 1-10, per diagrams) ===== */
+new Chart(document.getElementById('chart1'), {
+  type:'doughnut',
+  data:{ labels:['IMD (5 vars)','MODIS (4 vars)','ERA5 (5 vars)','CPCB (1 var)','Derived/target (7 vars)'],
+    datasets:[{ data:[5,4,5,1,7], backgroundColor:[cool,'#5b7fbf',heat[0],heat[3],heat[1]], borderColor:'#0a0f1c', borderWidth:3 }]},
+  options:{ plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } }, title:{ display:true, text:'22 combined variables by source', color:'#eef1f6', font:{size:13,weight:'600'} } }, cutout:'62%' }
+});
+
+new Chart(document.getElementById('chart2'), {
+  type:'bar',
+  data:{ labels:['Raw','Cleaned','Transformed','QC-verified'], datasets:[{ label:'District-year rows', data:[7956,7956,7956,7956], backgroundColor:cool, borderRadius:6, maxBarThickness:56 }]},
+  options:{ plugins:{ legend:{display:false}, title:{ display:true, text:'Dataset integrity preserved through QC (7,956 rows)', color:'#eef1f6', font:{size:13,weight:'600'} } },
+    scales:{ y:{ beginAtZero:true, suggestedMax:9000, ...baseGrid() }, x:{ grid:{display:false} } } }
+});
+
+new Chart(document.getElementById('chart3'), {
+  type:'bar',
+  data:{ labels:['Raw variables','+ Lag','+ Rolling stats','+ Interactions','+ Derived indices'],
+    datasets:[{ label:'Cumulative feature count', data:[22,42,58,68,73], backgroundColor:[cool,heat[0],heat[1],heat[2],heat[3]], borderRadius:6 }]},
+  options:{ indexAxis:'y', plugins:{ legend:{display:false}, title:{ display:true, text:'Feature space growth: 22 → 73+ (per pipeline diagram)', color:'#eef1f6', font:{size:13,weight:'600'} } },
+    scales:{ x:{ beginAtZero:true, ...baseGrid() }, y:{ grid:{display:false} } } }
+});
+
+new Chart(document.getElementById('chart4'), {
+  type:'pie',
+  data:{ labels:['Train 2000–2017 (~5,569 rows)','Test 2018–2025 (~2,387 rows)'], datasets:[{ data:[5569,2387], backgroundColor:[cool, heat[2]], borderColor:'#0a0f1c', borderWidth:3 }]},
+  options:{ plugins:{ legend:{ position:'bottom', labels:{boxWidth:10,font:{size:11}} }, title:{ display:true, text:'Chronological 70/30 split', color:'#eef1f6', font:{size:13,weight:'600'} } } }
+});
+
+new Chart(document.getElementById('chart5'), {
+  type:'bar',
+  data:{ labels:['Linear Reg.','Ridge','Random Forest','SVR (RBF)','MLP','Gradient Boosting'],
+    datasets:[{ label:'Cross-validated R² (illustrative ranking)', data:[0.71,0.73,0.89,0.84,0.86,0.911], backgroundColor: ctx => ctx.dataIndex===5 ? heat[2] : '#3a4a6b', borderRadius:6 }]},
+  options:{ plugins:{ legend:{display:false}, title:{ display:true, text:'Model selection — GBM emerges as primary model', color:'#eef1f6', font:{size:13,weight:'600'} } },
+    scales:{ y:{ min:0, max:1, ...baseGrid() }, x:{ grid:{display:false}, ticks:{ font:{size:10.5} } } } }
+});
+
+new Chart(document.getElementById('chart6'), {
+  type:'bar',
+  data:{ labels:['Temporal 5-fold CV','Spatial LORO-CV','Held-out test (2018–2025)'],
+    datasets:[{ label:'R²', data:[0.911,0.875,0.982], backgroundColor:[cool,heat[1],heat[3]], borderRadius:6 }]},
+  options:{ plugins:{ legend:{display:false}, title:{ display:true, text:'Robustness across three validation regimes', color:'#eef1f6', font:{size:13,weight:'600'} } },
+    scales:{ y:{ min:0.7, max:1, ...baseGrid() }, x:{ grid:{display:false}, ticks:{ font:{size:10.5} } } } }
+});
+
+new Chart(document.getElementById('chart7'), {
+  type:'bar',
+  data:{ labels:['PM2.5','Heat_Accum','DTR','HWF','LST_lag1','Max_Temp_roll3'],
+    datasets:[{ label:'Relative importance (normalized)', data:[0.48,0.58,0.63,0.74,0.85,1.0], backgroundColor:['#3a4a6b','#3a4a6b',cool,heat[1],heat[2],heat[3]], borderRadius:6 }]},
+  options:{ indexAxis:'y', plugins:{ legend:{display:false}, title:{ display:true, text:'Top climatic drivers of HWI (combined GBDT gain + permutation + SHAP)', color:'#eef1f6', font:{size:12.5,weight:'600'} } },
+    scales:{ x:{ min:0, max:1, ...baseGrid() }, y:{ grid:{display:false} } } }
+});
+
+(function(){
+  const years=[]; const vals=[]; let v = 0.30;
+  for(let y=2000;y<=2025;y++){ years.push(y); v += 0.012 + (Math.sin(y*0.7)*0.01); vals.push(+v.toFixed(3)); }
+  new Chart(document.getElementById('chart8'), {
+    type:'line',
+    data:{ labels:years, datasets:[{ label:'National mean HWI (illustrative)', data:vals, borderColor:heat[2], backgroundColor:'rgba(229,82,43,.12)', fill:true, tension:.35, pointRadius:0, borderWidth:2.5 }]},
+    options:{ plugins:{ legend:{display:false}, title:{ display:true, text:'Illustrative long-term HWI trend (Theil–Sen: significant increase, p < 0.05)', color:'#eef1f6', font:{size:12,weight:'600'} } },
+      scales:{ y:{ ...baseGrid() }, x:{ grid:{display:false}, ticks:{ maxTicksLimit:8, font:{size:10.5} } } } }
+  });
+})();
+
+const sspData = (function(){
+  const years=[]; for(let y=2026;y<=2100;y+=5) years.push(y);
+  function series(base, slope, noiseAmp){ return years.map((y,i)=> +(base + slope*i + Math.sin(i*1.3)*noiseAmp).toFixed(3)); }
+  return { years, 'SSP1-2.6': series(0.55, 0.010, 0.01), 'SSP2-4.5': series(0.55, 0.020, 0.015), 'SSP3-7.0': series(0.55, 0.032, 0.02), 'SSP5-8.5': series(0.55, 0.046, 0.025) };
+})();
+const sspColors = { 'SSP1-2.6':cool, 'SSP2-4.5':heat[0], 'SSP3-7.0':heat[2], 'SSP5-8.5':heat[3] };
+let activeSSP = new Set(Object.keys(sspColors));
+function buildSSPDatasets(){
+  return Object.keys(sspColors).filter(k=>activeSSP.has(k)).map(k=>({ label:k, data: sspData[k], borderColor: sspColors[k], backgroundColor: sspColors[k]+'22', fill:false, tension:.3, pointRadius:0, borderWidth:2.5 }));
+}
+const chart9 = new Chart(document.getElementById('chart9'), {
+  type:'line', data:{ labels: sspData.years, datasets: buildSSPDatasets() },
+  options:{ plugins:{ legend:{ position:'bottom', labels:{boxWidth:10,font:{size:11}} }, title:{ display:true, text:'Projected district-mean HWI, 2026–2100 (illustrative, per SSP)', color:'#eef1f6', font:{size:12.5,weight:'600'} } },
+    scales:{ y:{ ...baseGrid() }, x:{ grid:{display:false}, ticks:{ font:{size:10.5} } } } }
+});
+const toggleRow = document.getElementById('ssp-toggles');
+Object.keys(sspColors).forEach(k=>{
+  const btn = document.createElement('button'); btn.className='toggle-btn on'; btn.textContent=k; btn.style.borderColor=sspColors[k];
+  btn.onclick = ()=>{
+    if(activeSSP.has(k) && activeSSP.size>1){ activeSSP.delete(k); btn.classList.remove('on'); }
+    else if(!activeSSP.has(k)){ activeSSP.add(k); btn.classList.add('on'); }
+    chart9.data.datasets = buildSSPDatasets(); chart9.update();
+  };
+  toggleRow.appendChild(btn);
+});
+
+/* ===== Cross-document consistency table ===== */
+const consistency = [
+  ['Study domain','10 states, 306 districts','306 districts (implied ~10 states + Delhi UT)','Ch.1 scope ≠ pipeline-diagram scope'],
+  ['Engineered features','58 (Ch.1 prose)','73+ (Ch.3 prose) · 73+ (these diagrams)','Ch.1 alone differs from both Ch.3 and the diagrams'],
+  ['ML algorithms','RF, GBM, SVR, LSTM, CNN-LSTM (+MLR)','Linear, Ridge, RF, GBM, SVR, MLP — no deep learning','Ch.1 names deep-learning models never trained per diagrams/Ch.3'],
+  ['Bootstrap replicates','50 resamples (Ch.1)','1,000 iterations, 33 districts/iter (this pipeline)','30 (Ch.3 prose) vs 50 (Ch.1) vs 1,000 (diagrams) — three figures'],
+  ['SSP scenarios used','Not specified in Ch.1 prose','4 scenarios: SSP1-2.6, SSP2-4.5, SSP3-7.0, SSP5-8.5','Ch.3 prose states only 2 (SSP2-4.5, SSP5-8.5)'],
+  ['Projection horizon','Through 2050 (Ch.1)','2026–2100 (this pipeline)','50-year vs. 75-year horizon mismatch']
+];
+document.getElementById('tableConsistency').innerHTML = '<thead><tr><th>Item</th><th>Chapter 1 (prose)</th><th>Phase 1–10 diagrams (this dashboard)</th><th>Why it matters</th></tr></thead><tbody>' +
+  consistency.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('') + '</tbody>';
+
+/* ===== nav rail + scroll spy + thermometer ===== */
+const phases = [...document.querySelectorAll('section.phase')];
+const rail = document.getElementById('rail');
+rail.innerHTML = '<div class="rail-brand"><div class="kicker">Navigate</div><h1>PhD Dashboard</h1></div>' +
+  '<div class="rail-part">Part A — Framework</div>' +
+  phases.slice(0,5).map((s,i)=>`<div class="rail-item" data-target="${s.id}"><span class="rail-num">A${i+1}</span><span>${s.dataset.title}</span></div>`).join('') +
+  '<div class="rail-part">Part B — 10 Phases</div>' +
+  phases.slice(5,15).map((s,i)=>`<div class="rail-item" data-target="${s.id}"><span class="rail-num">${String(i+1).padStart(2,'0')}</span><span>${s.dataset.title}</span></div>`).join('') +
+  '<div class="rail-part">Quality</div>' +
+  phases.slice(15).map((s)=>`<div class="rail-item" data-target="${s.id}"><span class="rail-num">⚠</span><span>${s.dataset.title}</span></div>`).join('');
+const railItems = [...rail.querySelectorAll('.rail-item')];
+railItems.forEach(item=>{ item.addEventListener('click', ()=> document.getElementById(item.dataset.target).scrollIntoView({behavior:'smooth', block:'start'})); });
+const thermoFill = document.getElementById('thermo-fill');
+function onScroll(){
+  const doc = document.documentElement;
+  const scrolled = doc.scrollTop; const max = doc.scrollHeight - doc.clientHeight;
+  thermoFill.style.height = (max>0 ? (scrolled/max*100) : 0) + '%';
+  let currentId = phases[0].id;
+  for(const s of phases){ const rect = s.getBoundingClientRect(); if(rect.top<=140) currentId = s.id; }
+  railItems.forEach(it=> it.classList.toggle('active', it.dataset.target===currentId));
+}
+document.addEventListener('scroll', onScroll, {passive:true});
+window.addEventListener('resize', onScroll);
+onScroll();
+</script>
+</body>
+</html>
