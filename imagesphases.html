@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HWI Pipeline — Methodology Dashboard</title>
+<style>
+  :root{
+    --ink:#080B14;
+    --panel:#11162236;
+    --panel-solid:#121826;
+    --panel-raised:#171e2d;
+    --line:#242c3d;
+    --text:#E8ECF4;
+    --muted:#8B93A7;
+    --faint:#565f76;
+    --cool:#3DDBD9;
+    --cool-soft:#1c4a4a;
+    --amber:#FFB020;
+    --hot:#E8432F;
+    --good:#4ADE80;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'IBM Plex Sans',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  @font-face{font-family:'Space Grotesk';src:local('Space Grotesk');}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 85% -5%, #17233a55, transparent),
+      radial-gradient(ellipse 700px 500px at -5% 100%, #2a151555, transparent),
+      var(--ink);
+    color:var(--text);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--amber);color:#000;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+
+  a{color:inherit;}
+
+  /* ---------- Header ---------- */
+  header{
+    padding:28px 40px 20px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:18px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand-eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--cool);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(24px,3.2vw,34px);
+    letter-spacing:-0.01em;
+    line-height:1.15;
+    max-width:640px;
+  }
+  h1 span{color:var(--amber);}
+  .brand-sub{
+    color:var(--muted);
+    font-size:13.5px;
+    margin-top:8px;
+    max-width:560px;
+    line-height:1.5;
+  }
+  .stat-row{
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+  }
+  .stat{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    min-width:88px;
+  }
+  .stat b{
+    font-family:var(--font-display);
+    font-size:22px;
+    font-weight:700;
+    background:linear-gradient(120deg,var(--amber),var(--hot));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .stat span{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--muted);
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+
+  /* ---------- Layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns:290px 1fr;
+    max-width:1440px;
+    margin:0 auto;
+    align-items:start;
+  }
+
+  /* ---------- Rail nav (signature element) ---------- */
+  nav.rail{
+    position:sticky;
+    top:0;
+    height:100vh;
+    padding:30px 14px 30px 40px;
+    display:flex;
+    gap:16px;
+  }
+  .mercury{
+    position:relative;
+    width:6px;
+    border-radius:4px;
+    background:var(--line);
+    flex-shrink:0;
+  }
+  .mercury-fill{
+    position:absolute;
+    bottom:0;left:0;right:0;
+    border-radius:4px;
+    background:linear-gradient(180deg,var(--hot) 0%, var(--amber) 45%, var(--cool) 100%);
+    transition:height .45s cubic-bezier(.4,0,.2,1);
+  }
+  .mercury-bulb{
+    position:absolute;
+    left:50%;
+    width:14px;height:14px;
+    border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 0 4px #080B14, 0 0 14px 2px var(--amber);
+    transform:translate(-50%,50%);
+    transition:bottom .45s cubic-bezier(.4,0,.2,1);
+  }
+  .phase-list{
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    flex:1;
+  }
+  .phase-list li{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:9px 10px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:background .2s;
+    position:relative;
+  }
+  .phase-list li:hover{background:#ffffff08;}
+  .phase-list li.active{background:#ffffff0f;}
+  .phase-num{
+    font-family:var(--font-mono);
+    font-size:11px;
+    width:22px;height:22px;
+    border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);
+    color:var(--muted);
+    flex-shrink:0;
+    transition:all .2s;
+  }
+  .phase-list li.active .phase-num{
+    border-color:transparent;
+    color:#0a0e1a;
+    font-weight:700;
+  }
+  .phase-name{
+    font-size:12.5px;
+    color:var(--muted);
+    line-height:1.3;
+    transition:color .2s;
+  }
+  .phase-list li.active .phase-name{color:var(--text);font-weight:600;}
+
+  /* ---------- Main content ---------- */
+  main{
+    padding:34px 40px 90px 34px;
+    min-width:0;
+  }
+  .phase-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:26px;
+  }
+  .phase-tag{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .phase-title{
+    font-family:var(--font-display);
+    font-size:clamp(22px,2.6vw,30px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .phase-objective{
+    color:var(--muted);
+    font-size:14px;
+    margin-top:6px;
+    max-width:620px;
+    font-style:italic;
+  }
+  .phase-progress{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--faint);
+    white-space:nowrap;
+  }
+
+  .section-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:16px;
+    margin-bottom:20px;
+  }
+  .card{
+    background:var(--panel-solid);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;
+    height:3px;
+    background:var(--accent,var(--cool));
+  }
+  .card-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .card-icon{
+    width:30px;height:30px;
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    background:color-mix(in srgb, var(--accent,var(--cool)) 16%, transparent);
+    color:var(--accent,var(--cool));
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:12px;
+    flex-shrink:0;
+  }
+  .card h3{
+    font-family:var(--font-display);
+    font-size:14.5px;
+    font-weight:600;
+  }
+  .card ul{
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    margin-bottom:12px;
+  }
+  .card ul li{
+    font-size:12.8px;
+    color:#c9cfdd;
+    padding-left:14px;
+    position:relative;
+    line-height:1.45;
+  }
+  .card ul li::before{
+    content:'';
+    position:absolute;
+    left:0;top:6px;
+    width:5px;height:5px;
+    border-radius:50%;
+    background:var(--accent,var(--cool));
+    opacity:.8;
+  }
+  .card-meta{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--muted);
+    background:#00000030;
+    border:1px dashed var(--line);
+    border-radius:8px;
+    padding:8px 10px;
+    line-height:1.5;
+  }
+  .card-meta b{color:var(--accent,var(--cool));font-weight:600;}
+
+  .stat-banner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:14px;
+    background:linear-gradient(90deg,#121826,#151d2d);
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent,var(--amber));
+    border-radius:12px;
+    padding:18px 22px;
+    margin-bottom:16px;
+  }
+  .stat-banner .label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .stat-banner .metrics{
+    display:flex;
+    gap:26px;
+    flex-wrap:wrap;
+  }
+  .stat-banner .metrics div{display:flex;flex-direction:column;align-items:flex-end;}
+  .stat-banner .metrics b{
+    font-family:var(--font-display);
+    font-size:19px;
+    font-weight:700;
+  }
+  .stat-banner .metrics span{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    color:var(--muted);
+    text-transform:uppercase;
+  }
+
+  .note-box{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    font-size:12.5px;
+    color:var(--muted);
+    padding:12px 16px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:#ffffff03;
+  }
+  .note-box .check{
+    color:var(--good);
+    font-family:var(--font-mono);
+    flex-shrink:0;
+  }
+
+  /* tri-column summary panels used in phase 6 & 9 */
+  .trio{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+    background:#0000002a;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+    margin-top:4px;
+  }
+  .trio div{text-align:center;}
+  .trio b{
+    display:block;
+    font-family:var(--font-display);
+    font-size:16px;
+    color:var(--amber);
+  }
+  .trio span{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--muted);
+  }
+
+  footer{
+    padding:22px 40px 40px 34px;
+    color:var(--faint);
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.04em;
+    border-top:1px solid var(--line);
+    max-width:1440px;
+    margin:0 auto;
+  }
+
+  .mobile-nav{display:none;}
+
+  /* ---------- View toggle ---------- */
+  .view-toggle{
+    display:flex;
+    align-items:center;
+    gap:2px;
+    background:#0000003a;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:3px;
+    flex-shrink:0;
+  }
+  .view-toggle button{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    background:transparent;
+    border:none;
+    color:var(--muted);
+    padding:7px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    transition:all .2s;
+  }
+  .view-toggle button.active{
+    background:var(--accent,var(--amber));
+    color:#0a0e1a;
+    font-weight:700;
+  }
+  .view-toggle button:hover:not(.active){color:var(--text);}
+
+  .diagram-wrap{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+    background:
+      radial-gradient(circle at 30% 20%, #ffffff06, transparent 60%),
+      #0a0e18;
+  }
+  .diagram-wrap img{
+    display:block;
+    width:100%;
+    height:auto;
+    border-radius:8px;
+    cursor:zoom-in;
+  }
+  .diagram-caption{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:12px;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--faint);
+  }
+  .diagram-caption span.hint{color:var(--muted);}
+
+  /* ---------- Lightbox ---------- */
+  .lightbox{
+    position:fixed;inset:0;
+    background:#05070ce6;
+    backdrop-filter:blur(6px);
+    display:none;
+    align-items:center;justify-content:center;
+    z-index:100;
+    padding:30px;
+    cursor:zoom-out;
+  }
+  .lightbox.open{display:flex;}
+  .lightbox img{
+    max-width:100%;
+    max-height:100%;
+    border-radius:10px;
+    box-shadow:0 20px 60px #000a;
+  }
+  .lightbox .close-hint{
+    position:absolute;
+    top:22px;right:28px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:.06em;
+  }
+
+  @media (max-width:880px){
+    .layout{grid-template-columns:1fr;}
+    nav.rail{
+      position:sticky;top:0;z-index:20;
+      height:auto;width:100%;
+      padding:14px 16px;
+      background:var(--ink)ee;
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--line);
+      flex-direction:column;
+    }
+    .mercury{display:none;}
+    .phase-list{
+      flex-direction:row;
+      overflow-x:auto;
+      gap:8px;
+      -ms-overflow-style:none;
+      scrollbar-width:none;
+    }
+    .phase-list::-webkit-scrollbar{display:none;}
+    .phase-list li{flex-shrink:0;}
+    .phase-name{display:none;}
+    header{padding:22px 20px;}
+    main{padding:24px 20px 60px;}
+  }
+
+  [data-reveal]{animation:rise .38s ease both;}
+  @keyframes rise{
+    from{opacity:0;transform:translateY(8px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    [data-reveal]{animation:none;}
+    .mercury-fill,.mercury-bulb{transition:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand-eyebrow">PhD Dissertation · Predictive Climate Modeling</div>
+    <h1>Heatwave Index Pipeline — <span>10-Phase</span> Methodology</h1>
+    <p class="brand-sub">Machine-learning framework for predicting the Heatwave Index (HWI) across 10 Indian states and 306 districts, spanning historical records (2000–2025) and CMIP6 SSP projections (2026–2100).</p>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><b>306</b><span>Districts</span></div>
+    <div class="stat"><b>7,956</b><span>Obs. rows</span></div>
+    <div class="stat"><b>73+</b><span>Features</span></div>
+    <div class="stat"><b>0.998</b><span>Best R²</span></div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="rail">
+    <div class="mercury">
+      <div class="mercury-fill" id="mercuryFill" style="height:10%"></div>
+      <div class="mercury-bulb" id="mercuryBulb" style="bottom:10%"></div>
+    </div>
+    <ul class="phase-list" id="phaseList"></ul>
+  </nav>
+
+  <main>
+    <div id="phaseContent"></div>
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <span class="close-hint">ESC OR CLICK TO CLOSE</span>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<footer>
+  DATASET · 306 DISTRICTS × 26 YEARS = 7,956 DISTRICT-YEAR OBSERVATIONS &nbsp;·&nbsp; SOURCES: IMD / NASA MODIS / ECMWF ERA5 / CPCB / CMIP6 &nbsp;·&nbsp; LEAKAGE-FREE FEATURE SET (HSI_LAG1, HSI_ROLL3 REMOVED)
+</footer>
+
+<script>
+const PHASES = [
+{
+  tag:"PHASE 1 / 10", accent:"#3DDBD9", short:"Raw Data Collection", img:"images/phase-1.png",
+  title:"Raw data collection",
+  objective:"Objective 1 — Historical records & climatic variables, 2000–2025",
+  sections:[
+    {icon:"IMD", h:"IMD Gridded Meteorological Data", items:["Tmax","Tmin","Rainfall","Relative Humidity","Wind Speed"], meta:"Source: India Meteorological Department (IMD)"},
+    {icon:"SAT", h:"MODIS Satellite Products", items:["LST (MOD11A1)","NDVI (MOD13A1)","Surface Albedo","Vegetation Index"], meta:"Source: NASA MODIS (1 km resolution)"},
+    {icon:"RA5", h:"ERA5 Reanalysis Data", items:["Relative Humidity","Wind Speed","Surface Pressure","Dew Point","Solar Radiation"], meta:"Source: ECMWF ERA5 (0.25° resolution)"},
+    {icon:"AQ", h:"CPCB Air Quality Data", items:["PM2.5"], meta:"Source: Central Pollution Control Board (CPCB)"}
+  ],
+  banner:{label:"Combined Dataset (Raw)", metrics:[["7,956","Rows"],["22","Variables"],["2000–25","Span"]]},
+  note:"HWF (Heatwave Frequency) and HWI (Heatwave Index) are derived from IMD temperature-based heatwave criteria."
+},
+{
+  tag:"PHASE 2 / 10", accent:"#3DDBD9", short:"Data Prep & QC", img:"images/phase-2.png",
+  title:"Data preparation & quality control",
+  objective:"Objective 2 — Prepare a clean, consistent, and reliable dataset",
+  sections:[
+    {icon:"2.1", h:"Data Cleaning", items:["Handling missing values","Outlier detection & capping","Duplicate & inconsistency removal","Unit standardization","Coordinate & district name validation"], meta:"<b>Method:</b> Interpolation, IQR/3σ rule, logical checks"},
+    {icon:"2.2", h:"Data Transformation", items:["Temporal aggregation (daily → annual)","Spatial aggregation to district level","Variable scaling / normalization","Encoding categorical variables","Feature format standardization"], meta:"<b>Method:</b> Min–Max scaling, One-Hot Encoding, Aggregation"},
+    {icon:"2.3", h:"Quality Control", items:["Range & consistency checks","Cross-source validation","Correlation screening","Multicollinearity assessment (VIF)","Final dataset verification"], meta:"<b>Method:</b> Statistical tests, VIF &lt; 10, threshold filtering"}
+  ],
+  banner:{label:"Prepared Dataset (Clean & Ready for Analysis)", metrics:[["7,956","Rows"],["22","Variables"],["2000–25","Span"]]}
+},
+{
+  tag:"PHASE 3 / 10", accent:"#3DDBD9", short:"Feature Engineering", img:"images/phase-3.png",
+  title:"Feature engineering",
+  objective:"Objective 3 — Enhance information & extract predictive patterns",
+  sections:[
+    {icon:"3.1", h:"Lag Features", items:["Create lagged versions of key variables","Capture temporal dependencies"], meta:"<b>Examples:</b> lag1, lag2, lag3, lag6, lag12"},
+    {icon:"3.2", h:"Rolling Statistics", items:["Rolling mean, median, std over multiple windows","Smooth short-term fluctuations","Capture trends & variability"], meta:"<b>Examples:</b> roll3, roll6, roll12, roll24 (mean, std)"},
+    {icon:"3.3", h:"Interactions", items:["Pairwise interactions among key variables","Capture synergistic effects","Improve model expressiveness"], meta:"<b>Examples:</b> LST×NDVI, Temp×RH, PM2.5×HWF"},
+    {icon:"3.4", h:"Derived Indices", items:["Domain-specific indices & composite metrics","Summarize complex relationships","Enhance interpretability"], meta:"<b>Examples:</b> HSI, HWI, DTR, Heat_Accum, VCI"}
+  ],
+  banner:{label:"Engineered Feature Set (Expanded)", metrics:[["7,956","Rows"],["73+","Features"],["2000–25","Span"]]},
+  note:"Outcome — richer feature space capturing temporal dynamics, interactions, and domain knowledge for better model performance."
+},
+{
+  tag:"PHASE 4 / 10", accent:"#4FB6E8", short:"Train / Test Split", img:"images/phase-4.png",
+  title:"Temporal train / test split",
+  objective:"Chronological split to ensure robust model validation and avoid data leakage",
+  sections:[
+    {icon:"TR", h:"Train (70%)", items:["Years: 2000 – 2017","Number of rows: ~5,569","Purpose: Model training"], meta:""},
+    {icon:"TE", h:"Test (30%)", items:["Years: 2018 – 2025","Number of rows: ~2,387","Purpose: Out-of-sample evaluation"], meta:""}
+  ],
+  banner:{label:"Total Dataset", metrics:[["7,956","Rows"],["22","Variables"],["2000–25","Span"]]}
+},
+{
+  tag:"PHASE 5 / 10", accent:"#FFB020", short:"Model Development", img:"images/phase-5.png",
+  title:"Machine learning model development & training",
+  objective:"Objective 3 — Develop and evaluate leakage-free predictive models for Heatwave Index (HWI)",
+  sections:[
+    {icon:"01", h:"Linear Regression", items:["Baseline model","Linear relationship"], meta:"No target leakage"},
+    {icon:"02", h:"Ridge Regression", items:["L2 regularization","Reduces overfitting"], meta:"No target leakage"},
+    {icon:"03", h:"Random Forest", items:["Bagging ensemble","Handles non-linearity"], meta:"No target leakage"},
+    {icon:"★", h:"Gradient Boosting", items:["Boosting ensemble","High predictive power"], meta:"Primary model · No target leakage"},
+    {icon:"05", h:"SVR (RBF Kernel)", items:["Kernel-based model","Captures complex patterns"], meta:"No target leakage"},
+    {icon:"06", h:"MLP Regressor", items:["Neural network","Non-linear mapping"], meta:"No target leakage"}
+  ],
+  extra:`
+    <div class="card" style="--accent:#FFB020">
+      <div class="card-head"><div class="card-icon" style="background:#FFB02029;color:#FFB020">TS</div><h3>Time-aware validation strategy (no random shuffle)</h3></div>
+      <ul>
+        <li>Train period 2000–2017 (~70%, 5,569 rows) · Test period 2018–2025 (~30%, 2,387 rows)</li>
+        <li>TimeSeriesSplit, k = 5 folds (forward chaining)</li>
+        <li>Prevent data leakage — chronological split, no future information</li>
+        <li>Leakage-free feature set — HSI_roll3 and HSI_lag1 removed before training</li>
+      </ul>
+      <div class="card-meta"><b>Pipeline:</b> GridSearchCV → TimeSeriesSplit CV (k=5) → R² / RMSE / MAE / TSS → Best model selection</div>
+    </div>`,
+  note:"All models are trained on the leakage-free feature set. HSI_lag1 and HSI_roll3 have been removed to eliminate target leakage."
+},
+{
+  tag:"PHASE 6 / 10", accent:"#FFB020", short:"Model Validation", img:"images/phase-6.png",
+  title:"Model validation & performance evaluation",
+  objective:"Objective 4 — Assess model robustness, accuracy, and generalizability",
+  sections:[
+    {icon:"6.1", h:"Temporal 5-Fold Cross-Validation", items:["TimeSeriesSplit (k = 5)","Preserve chronological order","No random shuffling","Evaluates temporal stability"], meta:"<b>Mean R² ± SD:</b> 0.911 ± 0.013 (across 5 folds)"},
+    {icon:"6.2", h:"Spatial (LORO) Cross-Validation", items:["Leave-one-region-out","Hold out one state/region at a time","Test spatial generalizability","Robustness across locations"], meta:"<b>Mean R² ± SD:</b> 0.875 ± 0.022 (across regions)"},
+    {icon:"6.3", h:"Performance Metrics (Test Set)", items:["Evaluation on hold-out test set (2018–2025)","Comprehensive metric assessment","Error analysis & diagnostic checks","Residual & prediction distribution"], meta:"R² 0.982 · RMSE 0.162 · MAE 0.123 · TSS 0.951"}
+  ],
+  trio:[["0.911 ± 0.013","Temporal CV (5-fold)"],["0.875 ± 0.022","Spatial LORO-CV"],["0.982","Test Set R² (2018–25)"]],
+  note:"All validations follow time-aware splits with no random shuffle to ensure no information leakage."
+},
+{
+  tag:"PHASE 7 / 10", accent:"#FFB020", short:"Feature Importance", img:"images/phase-7.png",
+  title:"Feature importance analysis",
+  objective:"Objective 5 — Identify the most influential climatic drivers for HWI",
+  sections:[
+    {icon:"7.1", h:"Native GBDT Gain", items:["Uses mean decrease in impurity (gain)","Captures non-linear relationships","Model-specific importance scores","Ranked importance of all features"], meta:"<b>Outcome:</b> Primary importance ranking"},
+    {icon:"7.2", h:"Permutation Importance", items:["Measures increase in model error after shuffling each feature","Evaluated on test set (2018–2025)","More reliable than impurity-based importance","Repeated for stability"], meta:"<b>Setup:</b> 30 permutations × 10 repeats (300 runs)"},
+    {icon:"7.3", h:"SHAP Analysis", items:["SHAP values explain individual predictions","Global & local interpretability","Identifies positive/negative impact","Measures feature contribution consistently"], meta:"<b>Setup:</b> TreeExplainer (GBDT), interventional perturbation"}
+  ],
+  extra:`
+    <div class="card" style="--accent:#FFB020">
+      <div class="card-head"><div class="card-icon" style="background:#FFB02029;color:#FFB020">TOP</div><h3>Top influential climatic drivers (combined analysis)</h3></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        ${["Max_Temp_roll3","LST_lag1","HWF","DTR","Heat_Accum","PM2.5","…"].map(t=>`<span style="font-family:var(--font-mono);font-size:11px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;color:#e6c67c;background:#ffb02012;">${t}</span>`).join("")}
+      </div>
+      <div class="card-meta">Ranked feature list (GBDT gain + permutation importance) · Global SHAP summary (beeswarm & bar plots) · Top 10 drivers consistent across methods</div>
+    </div>`,
+  note:"Analysis uses the leakage-free feature set (HSI_roll3 and HSI_lag1 removed) to ensure reliable interpretation."
+},
+{
+  tag:"PHASE 8 / 10", accent:"#B388FF", short:"Historical EDA & Trends", img:"images/phase-8.png",
+  title:"Historical EDA & trend analysis",
+  objective:"Objective 7 — Detect patterns, trends and long-term changes in climatic variables (2000–2025)",
+  sections:[
+    {icon:"8.1", h:"Theil–Sen Slope & Mann–Kendall (MK) Test", items:["Non-parametric trend detection","Robust to outliers and non-normality","MK test for monotonic trend significance","Provides Theil–Sen slope magnitude"], meta:"<b>Output:</b> Trend direction (increasing/decreasing/no trend) & significance (p-value)"},
+    {icon:"8.2", h:"Spearman Rank Correlation", items:["Non-parametric correlation measure","Captures monotonic relationships","Robust to non-linear associations","Identifies key variable relationships"], meta:"<b>Output:</b> Spearman correlation matrix & top significant pairs (ρ, p-value)"},
+    {icon:"8.3", h:"State-wise Exploratory Data Analysis", items:["Summary statistics by state","Distribution & variability analysis","Inter-annual variability assessment","State ranking & comparison"], meta:"<b>Output:</b> State-wise EDA tables, boxplots, time series and heatmaps"}
+  ],
+  note:"All analyses are performed on the leakage-free dataset (HSI_lag1 and HSI_roll3 removed) for reliable historical pattern and trend detection."
+},
+{
+  tag:"PHASE 9 / 10", accent:"#FF6B4A", short:"Future Projections", img:"images/phase-9.png",
+  title:"Future projections 2026–2100",
+  objective:"Objectives 8 & 9 — Project future Heatwave Index (HWI) under CMIP6 SSP scenarios using bootstrap CI with district-level downscaling",
+  sections:[
+    {icon:"9.1", h:"Theil–Sen Extrapolation", items:["Extend historical trends (2000–2025)","Theil–Sen slope for each district","Project climatic variables to 2100","Robust to outliers and non-normality"], meta:"<b>Output:</b> Future baseline projections (2026–2100) by district"},
+    {icon:"9.2", h:"Feature Rebuilding", items:["Reconstruct engineered features","Maintain consistency with training pipeline","Create lagged, rolling, interaction and derived indices","Scenario-wise feature generation"], meta:"<b>Output:</b> Future-ready features for model prediction"},
+    {icon:"9.3", h:"GBM Prediction (District-Level)", items:["Use best model (Gradient Boosting)","Predict HWI at district level","For each SSP scenario and time step","Time horizon: 2026–2100"], meta:"<b>Output:</b> Future HWI projections by district and scenario"}
+  ],
+  extra:`
+    <div class="card" style="--accent:#FF6B4A">
+      <div class="card-head"><div class="card-icon" style="background:#FF6B4A29;color:#FF6B4A">9.4</div><h3>Uncertainty Quantification (Bootstrap CI)</h3></div>
+      <ul>
+        <li>Bootstrap resampling, B = 1,000 iterations</li>
+        <li>33 resamples (districts) per iteration</li>
+        <li>Build models & predict at each iteration</li>
+        <li>5th–95th percentile confidence interval</li>
+      </ul>
+      <div class="card-meta"><b>Output:</b> 90% confidence interval for HWI projections (district-level)</div>
+    </div>`,
+  banner:{label:"Future Projection Outputs (2026–2100)", metrics:[["4","SSP scenarios"],["1000","Bootstrap iters"],["90%","CI band"]]},
+  note:"CMIP6 data bias-corrected and downscaled before analysis. Projections are relative to the 2000–2025 baseline."
+},
+{
+  tag:"PHASE 10 / 10", accent:"#4ADE80", short:"Research Outputs", img:"images/phase-10.png",
+  title:"Research outputs & deliverables",
+  objective:"Objective 6 — Communicate results and provide reproducible, decision-ready deliverables",
+  sections:[
+    {icon:"10.1", h:"Figures", items:["Publication-ready plots","Maps & heatmaps","Time series & trends","Correlation matrices","Scenario comparison charts"], meta:"<b>Output:</b> High-resolution figures for papers & reports"},
+    {icon:"10.2", h:"CSVs", items:["Historical data (2000–2025)","Future projections (2026–2100)","District-level predictions","Scenario-wise outputs","Uncertainty (5th–95th CI)"], meta:"<b>Output:</b> Ready-to-use CSVs for analysis & reproducibility"},
+    {icon:"10.3", h:"Saved Models", items:["Trained GBM pipeline (best model)","Preprocessing & feature pipeline","Model configuration & params","Versioned & documented"], meta:"<b>Output:</b> Best GBM model & full pipeline for reuse"},
+    {icon:"10.4", h:"PhD Chapters", items:["Methodology & data","Results & validation","Trend analysis","Future projections","Discussion & implications"], meta:"<b>Output:</b> PhD chapters with figures, tables & references"}
+  ],
+  banner:{label:"All 6 research objectives achieved", metrics:[["0.9980","GBM Best R²"]]},
+  note:"All outputs are reproducible, well-documented, and structured for publication and policy use."
+}
+];
+
+const list = document.getElementById('phaseList');
+const contentEl = document.getElementById('phaseContent');
+const mercuryFill = document.getElementById('mercuryFill');
+const mercuryBulb = document.getElementById('mercuryBulb');
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+let currentIndex = 0;
+let viewMode = 'interactive'; // 'interactive' | 'diagram'
+
+lightbox.addEventListener('click', ()=> lightbox.classList.remove('open'));
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') lightbox.classList.remove('open'); });
+
+PHASES.forEach((p,i)=>{
+  const li = document.createElement('li');
+  li.innerHTML = `<span class="phase-num">${i+1}</span><span class="phase-name">${p.short}</span>`;
+  li.addEventListener('click',()=>render(i));
+  list.appendChild(li);
+});
+
+function render(i, mode){
+  currentIndex = i;
+  if(mode) viewMode = mode;
+  const p = PHASES[i];
+  [...list.children].forEach((li,idx)=>{
+    li.classList.toggle('active', idx===i);
+    li.querySelector('.phase-num').style.background = idx===i ? p.accent : 'transparent';
+  });
+  const pct = ((i+1)/PHASES.length*100).toFixed(0)+"%";
+  mercuryFill.style.height = pct;
+  mercuryBulb.style.bottom = pct;
+
+  const toggleHtml = `
+    <div class="view-toggle" style="--accent:${p.accent}">
+      <button class="${viewMode==='interactive'?'active':''}" data-mode="interactive">Interactive</button>
+      <button class="${viewMode==='diagram'?'active':''}" data-mode="diagram">Source Diagram</button>
+    </div>`;
+
+  if(viewMode==='diagram'){
+    contentEl.innerHTML = `
+      <div data-reveal>
+        <div class="phase-header">
+          <div>
+            <div class="phase-tag" style="color:${p.accent}">${p.tag}</div>
+            <div class="phase-title">${p.title}</div>
+            <div class="phase-objective">${p.objective}</div>
+          </div>
+          ${toggleHtml}
+        </div>
+        <div class="diagram-wrap">
+          <img src="${p.img}" alt="${p.title} — original flowchart" loading="lazy" id="phaseImg">
+          <div class="diagram-caption">
+            <span>Original process chart · ${p.tag}</span>
+            <span class="hint">Click image to zoom</span>
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById('phaseImg').addEventListener('click', ()=>{
+      lightboxImg.src = p.img;
+      lightboxImg.alt = p.title;
+      lightbox.classList.add('open');
+    });
+    wireToggle();
+    return;
+  }
+
+  let sectionsHtml = p.sections.map(s=>`
+    <div class="card" style="--accent:${p.accent}">
+      <div class="card-head">
+        <div class="card-icon">${s.icon}</div>
+        <h3>${s.h}</h3>
+      </div>
+      <ul>${s.items.map(it=>`<li>${it}</li>`).join('')}</ul>
+      ${s.meta?`<div class="card-meta">${s.meta}</div>`:''}
+    </div>
+  `).join('');
+
+  let bannerHtml = p.banner ? `
+    <div class="stat-banner" style="--accent:${p.accent}">
+      <div class="label">${p.banner.label}</div>
+      <div class="metrics">
+        ${p.banner.metrics.map(m=>`<div><b style="color:${p.accent}">${m[0]}</b><span>${m[1]}</span></div>`).join('')}
+      </div>
+    </div>` : '';
+
+  let trioHtml = p.trio ? `
+    <div class="trio">
+      ${p.trio.map(t=>`<div><b>${t[0]}</b><span>${t[1]}</span></div>`).join('')}
+    </div>` : '';
+
+  let noteHtml = p.note ? `<div class="note-box"><span class="check">✓</span><span>${p.note}</span></div>` : '';
+
+  contentEl.innerHTML = `
+    <div data-reveal>
+      <div class="phase-header">
+        <div>
+          <div class="phase-tag" style="color:${p.accent}">${p.tag}</div>
+          <div class="phase-title">${p.title}</div>
+          <div class="phase-objective">${p.objective}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="phase-progress">STEP ${i+1} OF ${PHASES.length}</div>
+          ${toggleHtml}
+        </div>
+      </div>
+      <div class="section-grid">${sectionsHtml}${p.extra||''}</div>
+      ${bannerHtml}
+      ${trioHtml}
+      ${noteHtml}
+    </div>
+  `;
+  wireToggle();
+}
+
+function wireToggle(){
+  document.querySelectorAll('.view-toggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=> render(currentIndex, btn.dataset.mode));
+  });
+}
+
+render(0);
+
+document.addEventListener('keydown', e=>{
+  if(lightbox.classList.contains('open')) return;
+  if(e.key==='ArrowRight' && currentIndex < PHASES.length-1) render(currentIndex+1);
+  if(e.key==='ArrowLeft' && currentIndex > 0) render(currentIndex-1);
+});
+</script>
+</body>
+</html>
