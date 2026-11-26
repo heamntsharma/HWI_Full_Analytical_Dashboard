@@ -259,19 +259,19 @@
     <section class="hero">
       <div class="kicker">District-Level Climate Research · 2000 – 2100</div>
       <h1>Ten phases, one pipeline: forecasting <em>Heatwave Intensity</em> across 306 Indian districts.</h1>
-      <p class="lede">From raw <a class="src-link" href="https://mausam.imd.gov.in/" target="_blank" rel="noopener">IMD ↗</a>/<a class="src-link" href="https://modis.gsfc.nasa.gov/" target="_blank" rel="noopener">MODIS ↗</a>/<a class="src-link" href="https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5" target="_blank" rel="noopener">ERA5 ↗</a>/<a class="src-link" href="https://cpcb.nic.in/" target="_blank" rel="noopener">CPCB ↗</a> observations to a leakage-free Gradient Boosting model and Bootstrap-CI future projections under four <a class="src-link" href="https://wcrp-cmip.org/cmip6/" target="_blank" rel="noopener">CMIP6 ↗</a> <a class="src-link" href="https://www.carbonbrief.org/explainer-how-shared-socioeconomic-pathways-explore-future-climate-change/" target="_blank" rel="noopener">SSP scenarios ↗</a>. This dashboard walks through each phase of the research design and the scientific reasoning behind it.</p>
+      <p class="lede">From <a class="src-link" href="https://mausam.imd.gov.in/" target="_blank" rel="noopener">IMD ↗</a>/<a class="src-link" href="https://modis.gsfc.nasa.gov/" target="_blank" rel="noopener">MODIS ↗</a>/<a class="src-link" href="https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5" target="_blank" rel="noopener">ERA5 ↗</a>/<a class="src-link" href="https://cpcb.nic.in/" target="_blank" rel="noopener">CPCB ↗</a> observations to a leakage-free Gradient Boosting model and Bootstrap-CI future projections under four <a class="src-link" href="https://wcrp-cmip.org/cmip6/" target="_blank" rel="noopener">CMIP6 ↗</a> <a class="src-link" href="https://www.carbonbrief.org/explainer-how-shared-socioeconomic-pathways-explore-future-climate-change/" target="_blank" rel="noopener">SSP scenarios ↗</a>. This dashboard walks through each phase of the research design and the scientific reasoning behind it.</p>
       <div class="hero-stats">
         <div class="hstat"><div class="val">7,956</div><div class="lab">district-year observations (306 × 26 yrs)</div></div>
-        <div class="hstat"><div class="val">35</div><div class="lab">features after engineering (22 raw → 35)</div></div>
+        <div class="hstat"><div class="val">35</div><div class="lab">features after engineering (22 Data → 35)</div></div>
         <div class="hstat"><div class="val">0.982</div><div class="lab">held-out test R² (2018–2025)</div></div>
         <div class="hstat"><div class="val">2100</div><div class="lab">projection horizon, 4 SSP pathways</div></div>
       </div>
     </section>
 
     <!-- ============ PHASE 1 ============ -->
-    <section class="phase" id="p1" data-title="Raw Data Collection">
+    <section class="phase" id="p1" data-title="Data Collection">
       <div class="phase-eyebrow">PHASE 01 / 10</div>
-      <h2 class="phase-title">Raw data collection</h2>
+      <h2 class="phase-title">Data collection</h2>
       <div class="phase-objective">Objective 1 — Historical records &amp; climatic variables, 2000–2025</div>
 
       <div class="grid-2">
@@ -359,7 +359,7 @@
 
       <div class="interp">
         <span class="interp-label">Scientific interpretation</span>
-        <p>Feature count expands from <b>22 raw variables to 35 engineered features (≈1.59× enrichment)</b> in the current dataset. Lag and rolling-window features encode <b>memory</b> in the climate system (heat accumulation, soil-moisture deficit persistence), which a purely contemporaneous feature set cannot capture — hover the <span class="gloss" data-tip="Example: 'lag1' = value from 1 year earlier.">lag / roll tags ↑</span> above for what each window actually represents. Interaction terms such as LST×NDVI approximate the physical modulation of surface heating by vegetation cover, giving tree-based models an explicit signal rather than forcing them to rediscover it via splits.</p>
+        <p>Feature count expands from <b>22 variables to 35 engineered features (≈1.59× enrichment)</b> in the current dataset. Lag and rolling-window features encode <b>memory</b> in the climate system (heat accumulation, soil-moisture deficit persistence), which a purely contemporaneous feature set cannot capture — hover the <span class="gloss" data-tip="Example: 'lag1' = value from 1 year earlier.">lag / roll tags ↑</span> above for what each window actually represents. Interaction terms such as LST×NDVI approximate the physical modulation of surface heating by vegetation cover, giving tree-based models an explicit signal rather than forcing them to rediscover it via splits.</p>
       </div>
     </section>
 
